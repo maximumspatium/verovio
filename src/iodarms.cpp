@@ -278,14 +278,20 @@ int DarmsInput::do_Comment(int pos, const char* data)
     
 int DarmsInput::do_Staff(int pos, const char* data)
 {
-    LogWarning("Staff %c", data[pos]);
+    while (!isspace(data[pos])) {
+        pos++;
+    }
+    
+    if (m_clef_offsets.size() <= m_measure->GetChildCount()) {
+        LogWarning("New staff but clef missing");
+        return pos;
+    }
+    
     m_staff = new Staff( m_measure->GetChildCount() + 1 );
     m_layer = new Layer( );
     m_layer->SetN( 1 );
-    
     m_staff->AddLayer(m_layer);
     m_measure->AddMeasureElement( m_staff );
-    
     m_clef_offset = m_clef_offsets[ m_measure->GetChildCount() ];
     
     return pos;
