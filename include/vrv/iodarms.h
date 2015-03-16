@@ -12,6 +12,7 @@
 //----------------------------------------------------------------------------
 
 #include "attdef.h"
+#include "clef.h"
 #include "io.h"
 
 namespace vrv {
@@ -46,7 +47,12 @@ public:
 private:
     int do_Note(int pos, const char* data, bool rest);
     int do_globalSpec(int pos, const char* data);
+    int do_BarLine(int pos, const char* data);
     int do_Clef(int pos, const char* data);
+    int do_Clefs(int pos, const char* data);
+    int do_Comment(int pos, const char* data);
+    int do_Staff(int, const char*data);
+    int read_Clef(int, const char*data, Clef *clef, int *offset);
     int parseMeter(int pos, const char* data);
     void UnrollKeysig(int quantity, char alter);
     
@@ -65,6 +71,8 @@ private:
     bool m_antique_notation; // support square notation
     
     static pitchmap PitchMap[];
+    
+    std::vector<int> m_clef_offsets;
 };
 
 } // namespace vrv

@@ -10,6 +10,8 @@
 
 //----------------------------------------------------------------------------
 
+#include <assert.h>
+
 //----------------------------------------------------------------------------
 
 #include "doc.h"
@@ -194,6 +196,9 @@ int DarmsInput::do_globalSpec(int pos, const char* data) {
                     m_antique_notation = true;
             }
             break;
+        case '-': // notehead type:
+            pos = do_Staff(pos, data);
+            break;
         
         default:
             break;
@@ -201,13 +206,100 @@ int DarmsInput::do_globalSpec(int pos, const char* data) {
     
     return pos;
 }
+    
+int DarmsInput::do_BarLine(int pos, const char* data)
+{
+    return pos;
+}
 
 int DarmsInput::do_Clef(int pos, const char* data) {
-    int position = data[pos] - ASCII_NUMBER_OFFSET; // manual conversion from ASCII to int
-    
-    pos = pos + 2; // skip the '!' 3!F
-    
+
+    int offset;
     Clef *mclef = new Clef();
+    
+    int subpos = read_Clef(pos, data, mclef, &offset);
+    if (subpos) {
+        m_clef_offset = offset;
+        m_layer->AddLayerElement(mclef);
+    }
+    else {
+        delete mclef;
+    }
+    return subpos;
+}
+    
+int DarmsInput::do_Clefs(int pos, const char* data) {
+    
+    //return do_Clef(pos, data);
+    StaffGrp *staffGrp = new StaffGrp();
+    // do this the C style, char by char
+    while (!isspace(data[pos])) {
+        int offset;
+        Clef *mclef = new Clef();
+        
+        int subpos = read_Clef(pos, data, mclef, &offset);
+        if (subpos) {
+            LogWarning("Clef");
+            // add miniaml scoreDef
+            StaffDef *staffDef = new StaffDef();
+            staffDef->SetN( (int)m_clef_offsets.size() + 1 );
+            staffDef->ReplaceClef(mclef);
+            staffGrp->AddStaffDef( staffDef );
+            m_clef_offsets.push_back(offset);
+        }
+        delete mclef;
+        pos = subpos;
+        while (!isspace(data[pos])) {
+            pos++;
+            if (pos[data]==',') {
+                pos++;
+                break;
+            }
+        }
+    }
+    
+    if (m_clef_offsets.size()==0) {
+        LogWarning("No clef found");
+        return 0;
+    }
+    
+    m_clef_offset = m_clef_offsets[0];
+    m_doc->m_scoreDef.AddStaffGrp( staffGrp );
+    return pos;
+}
+    
+int DarmsInput::do_Comment(int pos, const char* data)
+{
+    while (data[pos] != '$') {
+        pos++;
+    }
+    return pos;
+}
+    
+int DarmsInput::do_Staff(int pos, const char* data)
+{
+    LogWarning("Staff %c", data[pos]);
+    m_staff = new Staff( m_measure->GetChildCount() + 1 );
+    m_layer = new Layer( );
+    m_layer->SetN( 1 );
+    
+    m_staff->AddLayer(m_layer);
+    m_measure->AddMeasureElement( m_staff );
+    
+    m_clef_offset = m_clef_offsets[ m_measure->GetChildCount() ];
+    
+    return pos;
+}
+
+int DarmsInput::read_Clef(int pos, const char*data, Clef *mclef, int *offset)
+{
+    int position = -1;
+    LogWarning("%c", data[pos]);
+    if (data[pos] != '!') {
+        position = data[pos] - ASCII_NUMBER_OFFSET; // manual conversion from ASCII to int
+        pos++; // skip the '!' 3!F
+    }
+    pos++;
     
     if (data[pos] == 'C') {
         mclef->SetShape(CLEFSHAPE_C);
@@ -216,33 +308,48 @@ int DarmsInput::do_Clef(int pos, const char* data) {
             case 3: mclef->SetLine(2); break;
             case 5: mclef->SetLine(3); break;
             case 7: mclef->SetLine(4); break;
-            default: LogWarning("DarmsInput: Invalid C clef on line %i", position); break;
+            default:
+                // default C clef is C-3
+                mclef->SetLine(3);
+                position = 5;
+                break;
         }
-        m_clef_offset = 21 - position; // 21 is the position in the array, position is of the clef
+        (*offset) = 21 - position; // 21 is the position in the array, position is of the clef
     } else if (data[pos] == 'G') {
         mclef->SetShape(CLEFSHAPE_G);
         switch (position) {
             case 1: mclef->SetLine(1); break;
             case 3: mclef->SetLine(2); break;
-            default: LogWarning("DarmsInput: Invalid G clef on line %i", position); break;
+            default:
+                // default G clef is G-2
+                mclef->SetLine(2);
+                position = 3;
+                break;
         }
-        m_clef_offset = 25 - position;
+        (*offset) = 25 - position;
     } else if (data[pos] == 'F') {
         mclef->SetShape(CLEFSHAPE_F);
         switch (position) {
             case 3: mclef->SetLine(3); break;
             case 5: mclef->SetLine(4);; break;
             case 7: mclef->SetLine(5); break;
-            default: LogWarning("DarmsInput: Invalid F clef on line %i", position); break;
+            default:
+                // default F clef is F-4
+                mclef->SetLine(4);
+                position = 5;
+                break;
         }
-        m_clef_offset = 15 - position;
+        (*offset) = 15 - position;
     } else {
         // what the...
         LogWarning("DarmsInput: Invalid clef specification: %c", data[pos]);
         return 0; // fail
     }
-    
-    m_layer->AddLayerElement(mclef);
+    if ((data[pos+1] == '-') && (data[pos+2] == '8')) {
+        mclef->SetDis(OCTAVE_DIS_8);
+        mclef->SetDisPlace(PLACE_below);
+        pos += 2;
+    }
     return pos;
 }
 
@@ -398,12 +505,14 @@ bool DarmsInput::ImportString(std::string data_str) {
     int pos = 0;
     const char *data = data_str.c_str();
     len = data_str.length();
+    m_clef_offsets.clear();
+    bool has_clefs = false;
     
     m_doc->Reset( Raw );
-    System *system = new System();
     Page *page = new Page();
-    m_staff = new Staff( 1 );
+    System *system = new System();
     m_measure = new Measure( true, 1 );
+    m_staff = new Staff( 1 );
     m_layer = new Layer( );
     m_layer->SetN( 1 );
     
@@ -411,7 +520,7 @@ bool DarmsInput::ImportString(std::string data_str) {
     m_staff->AddLayer(m_layer);
     m_measure->AddMeasureElement( m_staff );
     system->AddMeasure( m_measure );
-    
+
     // do this the C style, char by char
     while (pos < len) {
         char c = data[pos];
@@ -422,15 +531,27 @@ bool DarmsInput::ImportString(std::string data_str) {
             if (res) pos = res;
             // if notehead type was specified in the !Nx option preserve it
             m_staff->notAnc = m_antique_notation;
-        } else if (isdigit(c) || c == '-' ) { // check for '-' too as note positions can be negative
-            //is number followed by '!' ? it is a clef
-            if (data[pos + 1] == '!') {
-                res = do_Clef(pos, data);
-                if (res) pos = res;
-            } else { // we assume it is a note
-                res = do_Note(pos, data, false);
-                if (res) pos = res;
+        } else if ((isdigit(c) || (c == '-')) && (data[pos + 1] != '!')) {
+            // we assume it is a note
+            res = do_Note(pos, data, false);
+            if (res) pos = res;
+        } else if (isdigit(c) && (data[pos + 1] == '!')) {
+            if (!has_clefs) {
+                // header clefs
+                res = do_Clefs(pos, data);
+                has_clefs = true;
             }
+            else {
+                // intermediate clef
+                res = do_Clef(pos, data);
+            }
+            if (res) pos = res;
+        } else if (c == '/') {
+            res = do_BarLine(pos, data);
+            if (res) pos = res;
+        } else if (c == 'K') {
+            res = do_Comment(pos, data);
+            if (res) pos = res;
         } else if (c == 'R') {
             res = do_Note(pos, data, true);
             if (res) pos = res;
@@ -438,16 +559,8 @@ bool DarmsInput::ImportString(std::string data_str) {
             //if (!isspace(c))
                 //LogMessage("Other %c", c);
         }
- 
         pos++;
     }
-    
-    // add miniaml scoreDef
-    StaffGrp *staffGrp = new StaffGrp();
-    StaffDef *staffDef = new StaffDef();
-    staffDef->SetN( 1 );
-    staffGrp->AddStaffDef( staffDef );
-    m_doc->m_scoreDef.AddStaffGrp( staffGrp );
     
     page->AddSystem( system );
     m_doc->AddPage( page );
