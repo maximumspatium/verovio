@@ -89,7 +89,7 @@ void DarmsInput::UnrollKeysig(int quantity, char alter) {
 /*
  Read the meter
  */
-int DarmsInput::parseMeter(int pos, const char* data) {
+int DarmsInput::do_Meter(int pos, const char* data) {
  
     Mensur *meter = new Mensur;
     
@@ -141,6 +141,22 @@ int DarmsInput::parseMeter(int pos, const char* data) {
     }
     
     m_layer->AddLayerElement(meter);
+    
+    while (!isspace(data[pos])) {
+        if (data[pos]==',') {
+            pos++;
+            if (data[pos]=='@') {
+                std::string text;
+                int subpos = read_Text(pos, data, &text);
+                if (subpos) {
+                    LogMessage(text.c_str());
+                    pos = subpos;
+                }
+            }
+        }
+        pos++;
+    }
+    
     return pos;
 }
 
@@ -174,7 +190,7 @@ int DarmsInput::do_globalSpec(int pos, const char* data) {
             break;
             
         case 'M': // meter
-            pos = parseMeter(pos, data);
+            pos = do_Meter(pos, data);
             break;
             
         case 'N': // notehead type:
@@ -243,11 +259,11 @@ int DarmsInput::do_Clefs(int pos, const char* data) {
         
         int subpos = read_Clef(pos, data, mclef, &offset);
         if (subpos) {
-            LogWarning("Clef");
             // add miniaml scoreDef
             StaffDef *staffDef = new StaffDef();
             staffDef->SetN( (int)m_clef_offsets.size() + 1 );
             staffDef->ReplaceClef(mclef);
+            m_staffDefs.push_back(staffDef);
             staffGrp->AddStaffDef( staffDef );
             m_clef_offsets.push_back(offset);
         }
@@ -307,7 +323,6 @@ int DarmsInput::do_Staff(int pos, const char* data)
 int DarmsInput::read_Clef(int pos, const char*data, Clef *mclef, int *offset)
 {
     int position = -1;
-    LogWarning("%c", data[pos]);
     if (data[pos] != '!') {
         position = data[pos] - ASCII_NUMBER_OFFSET; // manual conversion from ASCII to int
         pos++; // skip the '!' 3!F
@@ -363,6 +378,17 @@ int DarmsInput::read_Clef(int pos, const char*data, Clef *mclef, int *offset)
         mclef->SetDisPlace(PLACE_below);
         (*offset) -= 7;
         pos += 2;
+    }
+    return pos;
+}
+    
+    
+int DarmsInput::read_Text(int pos, const char*data, std::string *text)
+{
+    pos++;
+    while (data[pos] != '$') {
+        (*text) += data[pos];
+        pos++;
     }
     return pos;
 }
@@ -521,6 +547,7 @@ bool DarmsInput::ImportString(std::string data_str) {
     len = data_str.length();
     m_clef_offsets.clear();
     bool has_clefs = false;
+    m_staffDefs.clear();
     
     m_doc->Reset( Raw );
     Page *page = new Page();

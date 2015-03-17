@@ -21,6 +21,7 @@ class Doc;
 class Layer;
 class Measure;
 class Staff;
+class StaffDef;
 class Tie;
 
 //----------------------------------------------------------------------------
@@ -51,9 +52,11 @@ private:
     int do_Clef(int pos, const char* data);
     int do_Clefs(int pos, const char* data);
     int do_Comment(int pos, const char* data);
+    int do_Meter(int pos, const char* data);
     int do_Staff(int, const char*data);
+    //
     int read_Clef(int, const char*data, Clef *clef, int *offset);
-    int parseMeter(int pos, const char* data);
+    int read_Text(int pos, const char* data, std::string *text);
     void UnrollKeysig(int quantity, char alter);
     
 public:
@@ -73,6 +76,7 @@ private:
     static pitchmap PitchMap[];
     
     std::vector<int> m_clef_offsets;
+    std::vector<StaffDef*> m_staffDefs;
 };
 
 } // namespace vrv
