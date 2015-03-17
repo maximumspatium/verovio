@@ -209,6 +209,10 @@ int DarmsInput::do_globalSpec(int pos, const char* data) {
     
 int DarmsInput::do_BarLine(int pos, const char* data)
 {
+    while (!isspace(data[pos])) {
+        pos++;
+    }
+    m_layer->AddLayerElement( new Barline() );
     return pos;
 }
 
@@ -262,6 +266,9 @@ int DarmsInput::do_Clefs(int pos, const char* data) {
         LogWarning("No clef found");
         return 0;
     }
+    if (m_clef_offsets.size()>1) {
+        staffGrp->SetSymbol(STAFFGRP_BRACKET);
+    }
     
     m_clef_offset = m_clef_offsets[0];
     m_doc->m_scoreDef.AddStaffGrp( staffGrp );
@@ -292,7 +299,7 @@ int DarmsInput::do_Staff(int pos, const char* data)
     m_layer->SetN( 1 );
     m_staff->AddLayer(m_layer);
     m_measure->AddMeasureElement( m_staff );
-    m_clef_offset = m_clef_offsets[ m_measure->GetChildCount() ];
+    m_clef_offset = m_clef_offsets[ m_measure->GetChildCount() - 1 ];
     
     return pos;
 }
@@ -354,6 +361,7 @@ int DarmsInput::read_Clef(int pos, const char*data, Clef *mclef, int *offset)
     if ((data[pos+1] == '-') && (data[pos+2] == '8')) {
         mclef->SetDis(OCTAVE_DIS_8);
         mclef->SetDisPlace(PLACE_below);
+        (*offset) -= 7;
         pos += 2;
     }
     return pos;
@@ -439,7 +447,7 @@ int DarmsInput::do_Note(int pos, const char* data, bool rest) {
     if (rest) {
         Rest *rest =  new Rest;
         rest->SetDur(duration);
-        rest->SetDurGes(DURATION_8);
+        //rest->SetDurGes(DURATION_8);
         rest->SetDots( dot );
         m_layer->AddLayerElement(rest);
     } else {
@@ -449,7 +457,7 @@ int DarmsInput::do_Note(int pos, const char* data, bool rest) {
         
         Note *note = new Note;
         note->SetDur(duration);
-        note->SetDurGes(DURATION_8);
+        //note->SetDurGes(DURATION_8);
         note->SetAccid(accidental);
         note->SetOct( PitchMap[position + m_clef_offset].oct );
         note->SetPname( PitchMap[position + m_clef_offset].pitch );
@@ -545,7 +553,7 @@ bool DarmsInput::ImportString(std::string data_str) {
             if (!has_clefs) {
                 // header clefs
                 res = do_Clefs(pos, data);
-                has_clefs = true;
+                if (res) has_clefs = true;
             }
             else {
                 // intermediate clef
