@@ -77,6 +77,7 @@ private:
     
     std::vector<int> m_clef_offsets;
     std::vector<StaffDef*> m_staffDefs;
+    int m_current_staff;
 };
 
 } // namespace vrv

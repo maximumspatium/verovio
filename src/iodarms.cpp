@@ -149,7 +149,9 @@ int DarmsInput::do_Meter(int pos, const char* data) {
                 std::string text;
                 int subpos = read_Text(pos, data, &text);
                 if (subpos) {
-                    LogMessage(text.c_str());
+                    StaffDef *staffDef = m_staffDefs[m_current_staff];
+                    staffDef->SetLabel(text);
+                    //LogMessage(text.c_str());
                     pos = subpos;
                 }
             }
@@ -310,6 +312,7 @@ int DarmsInput::do_Staff(int pos, const char* data)
         return pos;
     }
     
+    m_current_staff++;
     m_staff = new Staff( m_measure->GetChildCount() + 1 );
     m_layer = new Layer( );
     m_layer->SetN( 1 );
@@ -548,6 +551,7 @@ bool DarmsInput::ImportString(std::string data_str) {
     m_clef_offsets.clear();
     bool has_clefs = false;
     m_staffDefs.clear();
+    m_current_staff = 0;
     
     m_doc->Reset( Raw );
     Page *page = new Page();
