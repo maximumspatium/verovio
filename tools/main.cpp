@@ -16,7 +16,7 @@
 #include <sys/stat.h>
 
 //----------------------------------------------------------------------------
-
+#include "mergetoolkit.h"
 #include "style.h"
 #include "toolkit.h"
 #include "vrv.h"
@@ -83,10 +83,10 @@ void display_usage() {
     cerr << " -f, --format=INPUT_FORMAT  Select input format: darms, mei, pae (default is pae)" << endl;
     
     cerr << " -h, --page-height=HEIGHT   Specify the page height (default is " << DEFAULT_PAGE_HEIGHT << ")" << endl;
-    
+
     cerr << " -o, --outfile=FILE_NAME    Output file name (use \"-\" for standard output)" << endl;
     
-    cerr << " -r, --recources=PATH       Path to SVG resources (default is " <<  vrv::Resources::GetPath() << ")" << endl;
+    cerr << " -r, --resources=PATH       Path to SVG resources (default is " <<  vrv::Resources::GetPath() << ")" << endl;
     
     cerr << " -s, --scale=FACTOR         Scale percent (default is " << DEFAULT_SCALE << ")" << endl;
     
@@ -107,6 +107,8 @@ void display_usage() {
     
     cerr << " --ignore-layout            Ignore all encoded layout information (if any)" << endl;
     cerr << "                            and fully recalculate the layout" << endl;
+
+    cerr << " --merge                    Merge two MEI files into one" << endl;
     
     cerr << " --no-layout                Ignore all encoded layout information (if any)" << endl;
     cerr << "                            and output one single page with one single system" << endl;
@@ -122,6 +124,7 @@ void display_usage() {
     cerr << " --no-justification         Do not justify the system" << endl;
     
     cerr << " --show-bounding-boxes      Show symbol bounding boxes" << endl;
+    
 }
 
 
@@ -153,6 +156,7 @@ int main(int argc, char** argv)
     // the resource path might be specified in the parameters
     // The fonts will be loaded later with Resources::InitFonts()
     Toolkit toolkit( false );
+    MergeToolkit mtoolkit( false ) ;
     
     // read pae by default
     type = pae_file;
@@ -174,6 +178,7 @@ int main(int argc, char** argv)
         {"format",              required_argument,  0, 'f'},
         {"help",                no_argument,        &show_help, 1},
         {"ignore-layout",       no_argument,        &ignore_layout, 1},
+        {"merge",               no_argument,        0,  1},
         {"no-layout",           no_argument,        &no_layout, 1},
         {"no-mei-hdr",          no_argument,        &no_mei_hdr, 1},
         {"no-justification",    no_argument,        &no_justification, 1},
@@ -277,6 +282,91 @@ int main(int argc, char** argv)
         display_usage();
         exit(0);
     }
+
+    
+    
+    if (strcmp(long_options[option_index].name,"merge") == 0) {
+        // Set the various flags
+        mtoolkit.SetAdjustPageHeight(adjust_page_height);
+        mtoolkit.SetNoLayout(no_layout);
+        mtoolkit.SetIgnoreLayout(ignore_layout);
+        mtoolkit.SetNoJustification(no_justification);
+        mtoolkit.SetShowBoundingBoxes(show_bounding_boxes);
+        
+        if (optind <= argc - 1) {
+            infile = string(argv[optind]);
+        }
+        else {
+            cerr << "Incorrect number of arguments: expecting one input file." << endl << endl;
+            display_usage();
+            exit(1);
+        }
+        
+        
+        
+        // Make sure the user uses a valid Resource path
+        // Save many headaches for empty SVGs
+        if(!dir_exists(vrv::Resources::GetPath())) {
+            cerr << "The resources path " << vrv::Resources::GetPath() << " could not be found, please use -r option." << endl;
+            exit(1);
+        }
+        
+        // Loaded the music font from the resource diretory
+        if (!Resources::InitFonts()) {
+            cerr << "The music font could not be loaded, please verify the content of the directory." << endl;
+            exit(1);
+        }
+        
+        // Load a specified font
+        if (!font.empty() && !mtoolkit.SetFont(font)) {
+            cerr << "Font '" << font << "' could not be loaded." << endl;
+            exit(1);
+        }
+        
+        if (outformat != "svg" && outformat != "mei") {
+            cerr << "Output format can only be: mei svg" << endl;
+            exit(1);
+        }
+        
+        // Make sure we provide a file name or output to std output with std input
+        if ((infile == "-") && (outfile.empty())) {
+            cerr << "Standard input can be used only with standard output or output filename." << endl;
+            exit(1);
+        }
+        
+        // Hardcode svg ext for now
+        if (outfile.empty()) {
+            outfile = removeExtension(infile);
+        }
+        else if (outfile == "-") {
+            DisableLog();
+            std_output = true;
+        }
+        else {
+            outfile = removeExtension(outfile);
+        }
+        
+        // Load the std input or load the file
+        if ( infile == "-" ) {
+            stringstream data_stream;
+            for (string line; getline(cin, line);) {
+                data_stream << line << endl;
+            }
+            if ( !mtoolkit.LoadString( data_stream.str() ) ) {
+                cerr << "The input could not be loaded" << endl;
+                exit(1);
+            }
+        }
+        else {
+            if ( !mtoolkit.LoadFile( infile ) ) {
+                cerr << "The file '" << infile << "' could not be open" << endl;
+                exit(1);
+            }
+        }
+        cerr << mtoolkit.Merge(0) << endl;
+        return 0;
+    }
+    
     
     // Set the various flags
     toolkit.SetAdjustPageHeight(adjust_page_height);
