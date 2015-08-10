@@ -363,7 +363,44 @@ int main(int argc, char** argv)
                 exit(1);
             }
         }
-        cerr << mtoolkit.Merge(0) << endl;
+        
+        // Check the page range
+        if (page > mtoolkit.GetPageCount()) {
+            cerr << "The page requested (" << page << ") is not in the page range (max is " << toolkit.GetPageCount() << ")" << endl;
+            exit(1);
+        }
+        if (page < 1) {
+            cerr << "The page number has to be greater than 0" << endl;
+            exit(1);
+        }
+        
+        int from = page;
+        int to = page + 1;
+        if (all_pages) {
+            to = mtoolkit.GetPageCount() + 1;
+        }
+        
+        int p;
+        for (p = from; p < to; p++) {
+            std::string cur_outfile = outfile;
+            if (all_pages) {
+                cur_outfile += StringFormat("_%03d", p);
+            }
+            string output = mtoolkit.Merge(p);
+            // To be implemented in Toolkit
+            cur_outfile += ".mei";
+            if (std_output) {
+                cout << output;
+            }
+            else if ( !mtoolkit.SaveFile( cur_outfile ) ) {
+                cerr << "Unable to write MEI to " << cur_outfile << "." << endl;
+                exit(1);
+            }
+            else {
+                cerr << "Output written to " << cur_outfile << endl;
+            }
+            
+        }
         return 0;
     }
     

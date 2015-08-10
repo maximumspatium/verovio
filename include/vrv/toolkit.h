@@ -286,7 +286,6 @@ protected:
 public:
     
 private:
-    Doc m_doc;
     View m_view;
     int m_scale;
     ConvertFileFormat m_format;
@@ -307,7 +306,12 @@ private:
     bool m_noJustification;
     bool m_showBoundingBoxes;
 	
-	char *m_cString;
+    char *m_cString;
+
+protected:
+    Doc m_doc;
+
+
 };
 
 } // namespace vrv
