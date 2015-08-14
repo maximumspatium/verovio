@@ -148,7 +148,7 @@ namespace vrv {
     }
     
     
-    std::string MergeToolkit::Merge( int pageNo)
+    std::string MergeToolkit::Merge(int pageNo)
     {
         pageNo--;
         Page* current_page = dynamic_cast<Page*>((&m_doc)->GetChild(pageNo));
@@ -163,6 +163,8 @@ namespace vrv {
                 Staff* staff_1 = dynamic_cast<Staff*>(staffs.at(0));
                 Staff* staff_2 = dynamic_cast<Staff*>(staffs.at(1));
                 MergeStaffs(staff_1, staff_2);
+                staff_2->m_parent = NULL;
+                current_measure->DetachChild(1);
                 //delete staff_2;
             }
         }

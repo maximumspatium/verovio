@@ -48,7 +48,7 @@ namespace vrv {
          * Merge the two voices into one
          * Return the result as an MEI string
          */
-        std::string Merge(int pageNo = 0);
+        std::string Merge(int pageNo = 1);
         
     private:
         void MergeMeasures(Measure* m1, Measure* m2);
