@@ -39,6 +39,114 @@ namespace vrv {
         
     }
     
+    void MergeToolkit::MergeMeasures(Measure* m1, Measure* m2)
+    {
+            // may be needed for the future
+    }
+
+    void MergeToolkit::MergeStaffs(Staff* s1, Staff* s2)
+    {
+        // assume 1 layer
+        Layer* layer_1 = dynamic_cast<Layer*>(s1->m_children.front());
+        Layer* layer_2 = dynamic_cast<Layer*>(s2->m_children.front());
+        if (layer_1 != NULL && layer_2 != NULL) {
+            MergeLayers(layer_1, layer_2);
+        }
+    }
+    
+    void MergeToolkit::MergeLayers(Layer* l1, Layer* l2)
+    {
+        ArrayOfObjects children_1 = l1->m_children;
+        ArrayOfObjects children_2 = l2->m_children;
+        int smaller = (int)(std::min(children_1.size(), children_2.size()));
+        for (int k = 0; k < smaller; k++) {
+            Note* note_1 = dynamic_cast<Note*>(children_1.at(k));
+            Note* note_2 = dynamic_cast<Note*>(children_2.at(k));
+            if (note_1 == NULL || note_2 == NULL)
+            {
+                Beam* beam_1 = dynamic_cast<Beam*>(children_1.at(k));
+                Beam* beam_2 = dynamic_cast<Beam*>(children_2.at(k));
+
+                if (beam_1 != NULL && beam_2 != NULL) {
+
+                    MergeBeams(beam_1, beam_2);
+                }
+            }
+            else
+            {
+                MergeNotes(note_1, note_2);
+            }
+        }
+        
+    }
+    
+    void MergeToolkit::MergeBeams(Beam* b1, Beam* b2)
+    {
+        int smaller = (int)(std::min(b1->m_children.size(), b2->m_children.size()));
+        for (int k = 0; k < smaller; k++) {
+            Note* note_1 = dynamic_cast<Note*>(b1->m_children.at(k));
+            Note* note_2 = dynamic_cast<Note*>(b2->m_children.at(k));
+            if (note_1 == NULL || note_2 == NULL)
+            {
+                if (dynamic_cast<Beam*>(note_1) != NULL && dynamic_cast<Beam*>(note_2) != NULL) {
+                }
+            }
+            else
+            {
+                MergeNotes(note_1, note_2);
+            }
+        }
+        
+        
+        
+    }
+    
+    void MergeToolkit::MergeNotes(Note* n1, Note* n2)
+    {
+            if (n1->GetActualDur() == n2->GetActualDur() &&
+                n1->GetDiatonicPitch() == n2->GetDiatonicPitch()) {
+                if (n1->m_children.size() > 0 && n1->m_children.size() > 0) {
+                    Verse* verse_1 = dynamic_cast<Verse*>(n1->m_children.front());
+                    Verse* verse_2 = dynamic_cast<Verse*>(n2->m_children.front());
+                    if (verse_1 != NULL && verse_2 != NULL) {
+                        MergeVerses(verse_1, verse_2, n1, n2, 0);
+                    }
+                    else {
+                        verse_1 = dynamic_cast<Verse*>(n1->m_children.back());
+                        verse_2 = dynamic_cast<Verse*>(n2->m_children.back());
+                        if (verse_1 != NULL && verse_2 != NULL) {
+                            MergeVerses(verse_1, verse_2, n1, n2, 1);
+                        }
+                    }
+                }
+            }
+
+        
+    }
+
+    void MergeToolkit::MergeRests(Rest* r1, Rest* r2)
+    {
+        
+    }
+    
+    void MergeToolkit::MergeVerses(Verse* v1, Verse* v2, Note* n1, Note* n2, int index)
+    {
+        if (v1 != NULL && v2!= NULL) {
+            n1->DetachChild(index);
+            n2->DetachChild(index);
+            v1->m_parent = NULL;
+            v2->m_parent = NULL;
+            App* app = new App(EDITORIAL_NOTE);
+            Lem* lem = new Lem();
+            lem->AddLayerElement(v1);
+            Rdg* rdg = new Rdg();
+            rdg->AddLayerElement(v2);
+            app->AddLemOrRdg(lem);
+            app->AddLemOrRdg(rdg);
+            n1->AddEditorialElement(app);
+        }
+    }
+    
     
     std::string MergeToolkit::Merge( int pageNo)
     {
@@ -54,67 +162,7 @@ namespace vrv {
                 ArrayOfObjects staffs = current_measure->m_children;
                 Staff* staff_1 = dynamic_cast<Staff*>(staffs.at(0));
                 Staff* staff_2 = dynamic_cast<Staff*>(staffs.at(1));
-                // assume 1 layer
-                Layer* layer_1 = dynamic_cast<Layer*>(staff_1->m_children.front());
-                Layer* layer_2 = dynamic_cast<Layer*>(staff_2->m_children.front());
-                ArrayOfObjects notes_1 = layer_1->m_children;
-                ArrayOfObjects notes_2 = layer_2->m_children;
-                if (notes_1.size() != notes_2.size()) {
-                    std::cerr << "false1";
-                }
-                else {
-                    for (int k = 0; k < notes_1.size(); k++) {
-                        Note* note_1 = dynamic_cast<Note*>(notes_1.at(k));
-                        Note* note_2 = dynamic_cast<Note*>(notes_2.at(k));
-                        if (note_1 == NULL && note_2 == NULL) {
-                            Rest* rest_1 = dynamic_cast<Rest*>(notes_1.at(k));
-                            Rest* rest_2 = dynamic_cast<Rest*>(notes_2.at(k));
-                            if (rest_1 == NULL || rest_2 == NULL) {
-                                
-                            }
-                            else {
-                                if (rest_1->GetActualDur() == rest_2->GetActualDur()) {
-                                
-                                }
-                                else {
-                                    std::cerr << "false";
-                                }
-                            }
-                        }
-                        else {
-                            if (note_1 == NULL || note_2 == NULL) {
-                                std::cerr << "false";
-                            }
-                            else {
-                                if (note_1->GetActualDur() == note_2->GetActualDur() &&
-                                    note_1->GetDiatonicPitch() == note_2->GetDiatonicPitch()) {
-                                    if (note_1->m_children.size() > 0 && note_1->m_children.size() > 0) {
-                                    Verse* verse_1 = dynamic_cast<Verse*>(note_1->m_children.front());
-                                    Verse* verse_2 = dynamic_cast<Verse*>(note_2->m_children.front());
-                                        if (verse_1 != NULL && verse_2 != NULL) {
-                                            note_1->m_children.clear();
-                                            note_2->m_children.clear();
-                                            verse_1->m_parent = NULL;
-                                            verse_2->m_parent = NULL;
-                                            App* app = new App(EDITORIAL_NOTE);
-                                            Lem* lem = new Lem();
-                                            lem->AddLayerElement(verse_1);
-                                            Rdg* rdg = new Rdg();
-                                            rdg->AddLayerElement(verse_2);
-                                            app->AddLemOrRdg(lem);
-                                            app->AddLemOrRdg(rdg);
-                                            note_1->AddEditorialElement(app);
-                                        }
-                                    }
-                                }
-                                else {
-                                    std::cerr << "false";
-                                }
-                            }
-                        }
-                    }
-                    
-                }
+                MergeStaffs(staff_1, staff_2);
                 //delete staff_2;
             }
         }

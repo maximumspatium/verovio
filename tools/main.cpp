@@ -381,7 +381,7 @@ int main(int argc, char** argv)
         }
         
         int p;
-        for (p = from; p < to; p++) {
+        for (p = from; p <= to; p++) {
             std::string cur_outfile = outfile;
             if (all_pages) {
                 cur_outfile += StringFormat("_%03d", p);

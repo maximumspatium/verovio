@@ -20,8 +20,10 @@
 //----------------------------------------------------------------------------
 
 #include "doc.h"
+#include "rest.h"
 #include "toolkit.h"
 #include "view.h"
+
 
 namespace vrv {
     
@@ -48,6 +50,22 @@ namespace vrv {
          */
         std::string Merge(int pageNo = 0);
         
+    private:
+        void MergeMeasures(Measure* m1, Measure* m2);
+        
+        void MergeStaffs(Staff* s1, Staff* s2);
+        
+        void MergeLayers(Layer* l1, Layer* l2);
+
+        void MergeBeams(Beam* b1, Beam* b2);
+        
+        void MergeNotes(Note* n1, Note* n2);
+        
+        void MergeRests(Rest* r1, Rest* r2);
+        
+        void MergeVerses(Verse* v1, Verse* v2, Note* n1, Note* n2, int index);
+        
     };
+    
 }// namespace vrv
 #endif
