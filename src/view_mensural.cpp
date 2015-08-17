@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-// Name:        musrc_mensural.cpp
+// Name:        view_mensural.cpp
 // Author:      Laurent Pugin
 // Created:     2015
 // Copyright (c) Authors and others. All rights reserved.
@@ -34,16 +34,20 @@ bool View::s_drawingLigObliqua = false;	// marque le 1e passage pour une oblique
 
 void View::DrawMensuralNote ( DeviceContext *dc, LayerElement *element, Layer *layer, Staff *staff, Measure *measure )
 {
-    assert(layer); // Pointer to layer cannot be NULL"
-    assert(staff); // Pointer to staff cannot be NULL"
-    assert(dynamic_cast<Note*>(element)); // Element must be a Note"
+    assert( dc );
+    assert( element );
+    assert( layer );
+    assert( staff );
+    assert( measure );
     
     Note *note = dynamic_cast<Note*>(element);
+    assert( note );
     
     int staffSize = staff->staffSize;
     int noteY = element->GetDrawingY();
     int xLedger, xNote, xStem;
     int drawingDur;
+    bool drawingCueSize;
     int staffY = staff->GetDrawingY();
     wchar_t fontNo;
     int ledge;
@@ -53,14 +57,15 @@ void View::DrawMensuralNote ( DeviceContext *dc, LayerElement *element, Layer *l
     xLedger = xStem;
     
     drawingDur = note->GetDrawingDur();
+    drawingCueSize = note->HasGrace();
     
-    int radius = m_doc->m_drawingNoteRadius[staffSize][note->m_cueSize];
+    int radius = m_doc->m_drawingNoteRadius[staffSize][drawingCueSize];
     
     if (drawingDur > DUR_1 || (drawingDur == DUR_1 && staff->notAnc)) {	// annuler provisoirement la modif. des lignes addit.
-        ledge = m_doc->m_drawingLedgerLine[staffSize][note->m_cueSize];
+        ledge = m_doc->m_drawingLedgerLine[staffSize][drawingCueSize];
     }
     else {
-        ledge = m_doc->m_drawingLedgerLine[staffSize][note->m_cueSize];
+        ledge = m_doc->m_drawingLedgerLine[staffSize][drawingCueSize];
         radius += radius/3;
     }
     
@@ -95,7 +100,7 @@ void View::DrawMensuralNote ( DeviceContext *dc, LayerElement *element, Layer *l
         else
             fontNo = SMUFL_E0A2_noteheadWhole;
         
-        DrawSmuflCode( dc, xNote, noteY, fontNo, staff->staffSize, note->m_cueSize );
+        DrawSmuflCode( dc, xNote, noteY, fontNo, staff->staffSize, drawingCueSize );
     }
     // Other values
     else {
@@ -108,7 +113,7 @@ void View::DrawMensuralNote ( DeviceContext *dc, LayerElement *element, Layer *l
             else fontNo = SMUFL_E0A3_noteheadHalf;
         }
 
-        DrawSmuflCode( dc, xNote, noteY, fontNo,  staff->staffSize, note->m_cueSize );
+        DrawSmuflCode( dc, xNote, noteY, fontNo,  staff->staffSize, drawingCueSize );
         
         DrawStem(dc, note, staff, note->m_drawingStemDir, radius, xStem, noteY);
     }
@@ -148,11 +153,14 @@ void View::DrawMensuralNote ( DeviceContext *dc, LayerElement *element, Layer *l
 
 void View::DrawMensur( DeviceContext *dc, LayerElement *element, Layer *layer, Staff *staff, Measure *measure )
 {
-    assert(layer); // Pointer to layer cannot be NULL"
-    assert(staff); // Pointer to staff cannot be NULL"
-    assert(dynamic_cast<Mensur*>(element)); // Element must be a Mensur"
+    assert( dc );
+    assert( element );
+    assert( layer );
+    assert( staff );
+    assert( measure );
     
     Mensur *mensur = dynamic_cast<Mensur*>(element);
+    assert( mensur );
     
     dc->StartGraphic( element, "", element->GetUuid() );
     
@@ -191,14 +199,15 @@ void View::DrawMensur( DeviceContext *dc, LayerElement *element, Layer *layer, S
         DrawMeterSigFigures ( dc, x, staff->GetDrawingY(), mensur->GetNum(), numbase, staff);
     }
     
-    dc->EndGraphic(element, this ); //RZ
+    dc->EndGraphic(element, this );
     
 }
 
 
 void View::DrawMensurCircle( DeviceContext *dc, int x, int yy, Staff *staff )
 {
-    assert( dc ); // DC cannot be NULL
+    assert( dc );
+    assert( staff );
     
     int y =  ToDeviceContextY (yy - m_doc->m_drawingDoubleUnit[ staff->staffSize ] * 2);
     int r = ToDeviceContextX( m_doc->m_drawingDoubleUnit[ staff->staffSize ]);
@@ -214,7 +223,8 @@ void View::DrawMensurCircle( DeviceContext *dc, int x, int yy, Staff *staff )
 
 void View::DrawMensurHalfCircle( DeviceContext *dc, int x, int yy, Staff *staff )
 {
-    assert( dc ); // DC cannot be NULL
+    assert( dc );
+    assert( staff );
     
     dc->SetPen( m_currentColour, m_doc->m_style->m_staffLineWidth, AxSOLID );
     dc->SetBrush( m_currentColour, AxTRANSPARENT );
@@ -235,7 +245,8 @@ void View::DrawMensurHalfCircle( DeviceContext *dc, int x, int yy, Staff *staff 
 
 void View::DrawMensurReversedHalfCircle( DeviceContext *dc, int x, int yy, Staff *staff )
 {
-    assert( dc ); // DC cannot be NULL
+    assert( dc );
+    assert (staff );
     
     dc->SetPen( m_currentColour, m_doc->m_style->m_staffLineWidth, AxSOLID );
     dc->SetBrush( m_currentColour, AxTRANSPARENT );
@@ -257,7 +268,8 @@ void View::DrawMensurReversedHalfCircle( DeviceContext *dc, int x, int yy, Staff
 
 void View::DrawMensurDot ( DeviceContext *dc, int x, int yy, Staff *staff )
 {
-    assert( dc ); // DC cannot be NULL
+    assert( dc );
+    assert( staff );
     
     int y =  ToDeviceContextY (yy - m_doc->m_drawingDoubleUnit[ staff->staffSize ] * 2);
     int r = m_doc->m_drawingUnit[staff->staffSize] * 2 / 3;
@@ -276,7 +288,8 @@ void View::DrawMensurDot ( DeviceContext *dc, int x, int yy, Staff *staff )
 
 void View::DrawMensurSlash ( DeviceContext *dc, int a, int yy, Staff *staff )
 {	
-    assert( dc ); // DC cannot be NULL
+    assert( dc );
+    assert( staff );
     
     int y1 = yy;
     int y2 = y1 - m_doc->m_drawingStaffSize[ staff->staffSize ];
@@ -312,12 +325,13 @@ void View::CalculateLigaturePosX ( LayerElement *element, Layer *layer, Staff *s
 
 void View::DrawMaximaToBrevis( DeviceContext *dc, int y, LayerElement *element, Layer *layer, Staff *staff )
 {
-    assert(layer); // Pointer to layer cannot be NULL"
-    assert(staff); // Pointer to staff cannot be NULL"
-    assert(dynamic_cast<Note*>(element)); // Element must be a Note"
-    
+    assert( dc );
+    assert( element );
+    assert( layer );
+    assert( staff );
     
     Note *note = dynamic_cast<Note*>(element);
+    assert( note );
     
     int xn, x1, x2, y1, y2, y3, y4;
     // int yy2, y5; // unused
@@ -380,12 +394,13 @@ void View::DrawMaximaToBrevis( DeviceContext *dc, int y, LayerElement *element, 
     
 void View::DrawLigature ( DeviceContext *dc, int y, LayerElement *element, Layer *layer, Staff *staff )
 {
-    assert(layer); // Pointer to layer cannot be NULL"
-    assert(staff); // Pointer to staff cannot be NULL"
-    assert(dynamic_cast<Note*>(element)); // Element must be a Note"
-    
-    
+    assert( dc );
+    assert( element );
+    assert( layer );
+    assert( staff );
+
     Note *note = dynamic_cast<Note*>(element);
+    assert( note );
     
     int xn, x1, x2, y1, y2, y3, y4;
     // int yy2, y5; // unused

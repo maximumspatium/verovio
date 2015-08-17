@@ -9,10 +9,6 @@
 #ifndef __VRV_CHORD_H__
 #define __VRV_CHORD_H__
 
-#include <typeinfo>
-
-//----------------------------------------------------------------------------
-
 #include "atts_shared.h"
 #include "durationinterface.h"
 #include "layerelement.h"
@@ -48,6 +44,7 @@ public:
     virtual ~Chord();
     virtual void Reset();
     virtual std::string GetClassName( ) { return "Chord"; };
+    virtual ClassId Is() { return CHORD; };
     ///@}
     
     /**
@@ -86,12 +83,12 @@ public:
     /**
      * See Object::PrepareTieAttr
      */
-    virtual int PrepareTieAttr( ArrayPtrVoid params );
+    virtual int PrepareTieAttr( ArrayPtrVoid *params );
     
     /**
      * See Object::PrepareTieAttr
      */
-    virtual int PrepareTieAttrEnd( ArrayPtrVoid params );
+    virtual int PrepareTieAttrEnd( ArrayPtrVoid *params );
     
 protected:
     /**

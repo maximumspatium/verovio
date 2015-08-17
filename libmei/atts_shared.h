@@ -16,6 +16,7 @@
 #define __VRV_ATTS_SHARED_H__
 
 #include "att.h"
+#include "att_classes.h"
 #include "pugixml.hpp"
 
 //----------------------------------------------------------------------------
@@ -2145,22 +2146,22 @@ public:
      * to the default value)
      **/
     ///@{
-    void SetKeySigShow(std::string keySigShow_) { m_keySigShow = keySigShow_; };
-    std::string GetKeySigShow() const { return m_keySigShow; };    
+    void SetKeySigShow(data_BOOLEAN keySigShow_) { m_keySigShow = keySigShow_; };
+    data_BOOLEAN GetKeySigShow() const { return m_keySigShow; };    
     bool HasKeySigShow( );
     
     //
-    void SetKeySigShowchange(std::string keySigShowchange_) { m_keySigShowchange = keySigShowchange_; };
-    std::string GetKeySigShowchange() const { return m_keySigShowchange; };    
+    void SetKeySigShowchange(data_BOOLEAN keySigShowchange_) { m_keySigShowchange = keySigShowchange_; };
+    data_BOOLEAN GetKeySigShowchange() const { return m_keySigShowchange; };    
     bool HasKeySigShowchange( );
     
     ///@}
 
 private:
     /** Indicates whether the key signature should be displayed. **/
-    std::string m_keySigShow;
+    data_BOOLEAN m_keySigShow;
     /** Determines whether cautionary accidentals should be displayed at a key change. **/
-    std::string m_keySigShowchange;
+    data_BOOLEAN m_keySigShowchange;
 
 /* include <attkey.sig.showchange> */
 };
@@ -3604,8 +3605,8 @@ public:
      * to the default value)
      **/
     ///@{
-    void SetPlace(std::string place_) { m_place = place_; };
-    std::string GetPlace() const { return m_place; };    
+    void SetPlace(data_STAFFREL place_) { m_place = place_; };
+    data_STAFFREL GetPlace() const { return m_place; };    
     bool HasPlace( );
     
     ///@}
@@ -3615,7 +3616,7 @@ private:
      * Captures the placement of the item with respect to the staff with which it is
      * associated.
      **/
-    std::string m_place;
+    data_STAFFREL m_place;
 
 /* include <attplace> */
 };

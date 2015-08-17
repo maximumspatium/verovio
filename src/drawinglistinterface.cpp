@@ -53,7 +53,27 @@ void DrawingListInterface::ResetDrawingList( )
     m_drawingList.clear();
 }
 
+//----------------------------------------------------------------------------
+// KeySigDrawingInterface
+//----------------------------------------------------------------------------
+
+KeySigDrawingInterface::KeySigDrawingInterface()
+{
+    Reset();
+}
 
 
+KeySigDrawingInterface::~KeySigDrawingInterface()
+{
+}
+
+
+void KeySigDrawingInterface::Reset()
+{
+    m_drawingCancelAccidType = ACCIDENTAL_EXPLICIT_n;
+    m_drawingCancelAccidCount = 0;
+    m_drawingShow = true;
+    m_drawingShowchange = false;
+}
 
 } // namespace vrv

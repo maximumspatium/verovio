@@ -39,6 +39,7 @@ public:
     // constructors and destructors
     Doc();
     virtual ~Doc();
+    virtual ClassId Is() { return DOC; }
 	
 	void AddPage( Page *page );
     
@@ -96,8 +97,8 @@ public:
      * These should eventually be set at parameters.
      */
     ///@{
-    short GetLeftMargin( const std::type_info *elementType  );
-    short GetRightMargin( const std::type_info *elementType );
+    char GetLeftMargin( const ClassId classId  );
+    char GetRightMargin( const ClassId classId );
     ///@}
 
     /*
@@ -185,7 +186,7 @@ public:
      * Functor for setting wordpos and connector ends
      * The functor is process by doc at the end of a document of closing opened syl.
      */
-    virtual int PrepareLyricsEnd( ArrayPtrVoid params );
+    virtual int PrepareLyricsEnd( ArrayPtrVoid *params );
 
 private:
     /**
@@ -211,11 +212,6 @@ public:
      * This could be saved somewhere as preferences (todo).
      */
     Style *m_style;
-    
-    /** 
-     * The source id. Exact use to be clarified.
-     */
-    std::string m_source;
     
     /**
      * Holds the top scoreDef.
@@ -244,8 +240,6 @@ public:
     int m_drawingOctaveSize[2];
     /** Font height (100 par defaut) */
     int m_drawingFontHeight;
-    /** Font height with ascent for normal and small staff and normal and grace size */
-	int m_drawingFontHeightAscent[2][2];
     /** Normal and small staff ration (4 / 5 by default) */
     int m_drawingSmallStaffRatio[2];
     /** Normal and grace size (3 / 4 by default) */

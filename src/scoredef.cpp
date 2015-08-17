@@ -128,7 +128,15 @@ void ScoreOrStaffDefAttrInterface::ReplaceKeySig( Object *newKeySig )
     if ( newKeySig ) {
         assert( dynamic_cast<KeySigAttr*>(newKeySig) || dynamic_cast<KeySig*>(newKeySig) );
         if (m_keySig) {
+            // Set the KeySigDrawingInterface values the key sig cancellation.
+            KeySig *oldKeySig = this->GetKeySigCopy();
+            assert( oldKeySig );
+            KeySigDrawingInterface *interface = dynamic_cast<KeySigDrawingInterface*>(newKeySig);
+            assert( interface );
+            interface->m_drawingCancelAccidCount = oldKeySig->GetAlterationNumber();
+            interface->m_drawingCancelAccidType = oldKeySig->GetAlterationType();
             delete m_keySig;
+            delete oldKeySig;
         }
         m_keySig = newKeySig->Clone();
     }
@@ -161,12 +169,14 @@ Clef *ScoreOrStaffDefAttrInterface::GetClefCopy() const
     // we should not call it without having checked if a clef is set
     if (!m_clef) return NULL;
     Clef *copy = NULL;
-    Clef *current_clef = dynamic_cast<Clef*>(m_clef);
-    if (current_clef) {
+    if (m_clef->Is() == CLEF) {
+        Clef *current_clef = dynamic_cast<Clef*>(m_clef);
+        assert( current_clef );
         copy = new Clef(*current_clef);
     }
     else {
         ClefAttr *current_attr = dynamic_cast<ClefAttr*>(m_clef);
+        assert( current_attr );
         copy = new Clef(current_attr);
     }
     assert(copy);
@@ -179,12 +189,14 @@ KeySig *ScoreOrStaffDefAttrInterface::GetKeySigCopy() const
     // we should not call it without having checked if a keysig is set
     if (!m_keySig) return NULL;
     KeySig *copy = NULL;
-    KeySig *current_keySig = dynamic_cast<KeySig*>(m_keySig);
-    if (current_keySig) {
+    if (m_keySig->Is() == KEY_SIG) {
+        KeySig *current_keySig = dynamic_cast<KeySig*>(m_keySig);
+        assert( current_keySig );
         copy = new KeySig(*current_keySig);
     }
     else {
         KeySigAttr *current_attr = dynamic_cast<KeySigAttr*>(m_keySig);
+        assert( current_attr );
         copy = new KeySig(current_attr);
     }
     assert(copy);
@@ -197,12 +209,14 @@ Mensur *ScoreOrStaffDefAttrInterface::GetMensurCopy() const
     // we should not call it without having checked if a mensur is set
     if (!m_mensur) return NULL;
     Mensur *copy = NULL;
-    Mensur *current_mensur = dynamic_cast<Mensur*>(m_mensur);
-    if (current_mensur) {
+    if (m_mensur->Is() == MENSUR) {
+        Mensur *current_mensur = dynamic_cast<Mensur*>(m_mensur);
+        assert( current_mensur );
         copy = new Mensur(*current_mensur);
     }
     else {
         MensurAttr *current_attr = dynamic_cast<MensurAttr*>(m_mensur);
+        assert( current_attr );
         copy = new Mensur(current_attr);
     }
     assert(copy);
@@ -215,12 +229,14 @@ MeterSig *ScoreOrStaffDefAttrInterface::GetMeterSigCopy() const
     // we should not call it without having checked if a meterSig is set
     if (!m_meterSig) return NULL;
     MeterSig *copy = NULL;
-    MeterSig *current_meterSig = dynamic_cast<MeterSig*>(m_meterSig);
-    if (current_meterSig) {
+    if (m_meterSig->Is() == METER_SIG) {
+        MeterSig *current_meterSig = dynamic_cast<MeterSig*>(m_meterSig);
+        assert( current_meterSig );
         copy = new MeterSig(*current_meterSig);
     }
     else {
         MeterSigAttr *current_attr = dynamic_cast<MeterSigAttr*>(m_meterSig);
+        assert( current_attr );
         copy = new MeterSig(current_attr);
     }
     assert(copy);
@@ -308,7 +324,7 @@ void ScoreDef::Replace( ScoreDef *newScoreDef )
     ArrayPtrVoid params;
 	params.push_back( this );
     Functor replaceStaffDefsInScoreDef( &Object::ReplaceStaffDefsInScoreDef );
-    newScoreDef->Process( &replaceStaffDefsInScoreDef, params );
+    newScoreDef->Process( &replaceStaffDefsInScoreDef, &params );
 }
 
 void ScoreDef::Replace( StaffDef *newStaffDef )
@@ -365,15 +381,16 @@ StaffDef *ScoreDef::GetStaffDef( int n )
 }
 
 
-void ScoreDef::SetRedrawFlags( bool clef, bool keysig, bool mensur, bool meterSig )
+void ScoreDef::SetRedrawFlags( bool clef, bool keySig, bool mensur, bool meterSig, bool keySigCancellation )
 {
     ArrayPtrVoid params;
 	params.push_back( &clef );
-    params.push_back( &keysig );
+    params.push_back( &keySig );
 	params.push_back( &mensur );
     params.push_back( &meterSig );
+    params.push_back( &keySigCancellation );
     Functor setStaffDefDraw( &Object::SetStaffDefRedrawFlags );
-    this->Process( &setStaffDefDraw, params );
+    this->Process( &setStaffDefDraw, &params );
 }
 
 //----------------------------------------------------------------------------
@@ -437,6 +454,9 @@ StaffDef::StaffDef() :
     AttLabelsAddl(),
     AttStaffDefVis()
 {
+    RegisterAttClass(ATT_COMMON);
+    RegisterAttClass(ATT_LABELSADDL);
+    RegisterAttClass(ATT_STAFFDEFVIS);
     Reset();
 }
 
@@ -462,15 +482,15 @@ void StaffDef::Reset()
 // ScoreDef functor methods
 //----------------------------------------------------------------------------
 
-int ScoreDef::CastOffSystems( ArrayPtrVoid params )
+int ScoreDef::CastOffSystems( ArrayPtrVoid *params )
 {
     // param 0: a pointer to the system we are taking the content from
     // param 1: a pointer the page we are adding system to (unused)
     // param 2: a pointer to the current system
     // param 3: the cummulated shift (m_drawingXRel of the first measure of the current system) (unused)
     // param 4: the system width (unused)
-    System *contentSystem = static_cast<System*>(params[0]);
-    System **currentSystem = static_cast<System**>(params[2]);
+    System *contentSystem = static_cast<System*>((*params)[0]);
+    System **currentSystem = static_cast<System**>((*params)[2]);
     
     // Since the functor returns FUNCTOR_SIBLINGS we should never go lower than the system children
     assert( dynamic_cast<System*>(this->m_parent));
@@ -489,26 +509,28 @@ int ScoreDef::CastOffSystems( ArrayPtrVoid params )
 // StaffDef functor methods
 //----------------------------------------------------------------------------
 
-int StaffDef::ReplaceStaffDefsInScoreDef( ArrayPtrVoid params )
+int StaffDef::ReplaceStaffDefsInScoreDef( ArrayPtrVoid *params )
 {
     // param 0: the scoreDef
-    ScoreDef *scoreDef = static_cast<ScoreDef*>(params[0]);
+    ScoreDef *scoreDef = static_cast<ScoreDef*>((*params)[0]);
     
     scoreDef->Replace( this );
     
     return FUNCTOR_CONTINUE;
 }
 
-int StaffDef::SetStaffDefRedrawFlags( ArrayPtrVoid params )
+int StaffDef::SetStaffDefRedrawFlags( ArrayPtrVoid *params )
 {
     // param 0: bool clef flag
     // param 1: bool keysig flag
     // param 2: bool mensur flag
     // param 3: bool meterSig flag
-    bool *clef = static_cast<bool*>(params[0]);
-    bool *keysig = static_cast<bool*>(params[1]);
-    bool *mensur = static_cast<bool*>(params[2]);
-    bool *meterSig = static_cast<bool*>(params[3]);
+    // param 4: bool keySig cancellation flag
+    bool *clef = static_cast<bool*>((*params)[0]);
+    bool *keysig = static_cast<bool*>((*params)[1]);
+    bool *mensur = static_cast<bool*>((*params)[2]);
+    bool *meterSig = static_cast<bool*>((*params)[3]);
+    bool *keySigCancellation = static_cast<bool*>((*params)[4]);
     
     if ( (*clef) ) {
         this->SetDrawClef( true );
@@ -521,6 +543,9 @@ int StaffDef::SetStaffDefRedrawFlags( ArrayPtrVoid params )
     }
     if ( (*meterSig) ) {
         this->SetDrawMeterSig( true );
+    }
+    if ( (*keySigCancellation) ) {
+        this->SetDrawKeySigCancellation( true );
     }
     
     return FUNCTOR_CONTINUE;

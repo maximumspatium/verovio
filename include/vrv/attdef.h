@@ -20,8 +20,7 @@ namespace vrv {
 typedef std::vector<std::pair<std::string, std::string> >  ArrayOfStrAttr;
     
 #define VRV_UNSET -0x7FFFFFFF
-    
-    
+
 //----------------------------------------------------------------------------
 // Durations
 //----------------------------------------------------------------------------
@@ -197,6 +196,16 @@ enum data_FONTWEIGHT {
     FONTWEIGHT_normal
 };
     
+/**
+ * MEI data.GRACE
+ */
+enum data_GRACE {
+    GRACE_NONE = 0,
+    GRACE_acc,
+    GRACE_unacc,
+    GRACE_unknown
+};
+    
     
 /**
  * MEI values for @func (no datatype in MEI)
@@ -308,6 +317,15 @@ enum data_MODUSMINOR {
 };
     
 /**
+ * MEI values for @num.format (no datatype in MEI)
+ */
+enum data_NUMFORMAT {
+    NUMFORMAT_NONE = 0,
+    NUMFORMAT_count,
+    NUMFORMAT_ratio,
+};
+    
+/**
  * MEI data.OCTAVE.DIS
  */
 enum data_OCTAVE_DIS {
@@ -358,6 +376,16 @@ enum data_PLACE {
     PLACE_NONE = 0,
     PLACE_above,
     PLACE_below
+};
+    
+/**
+ * MEI data.STAFFREL
+ */
+enum data_STAFFREL {
+    STAFFREL_NONE = 0,
+    STAFFREL_above,
+    STAFFREL_below,
+    STAFFREL_within
 };
 
 /**

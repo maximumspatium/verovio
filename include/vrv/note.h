@@ -44,6 +44,7 @@ typedef std::vector<Note*> ChordCluster;
 
 class Note: public LayerElement, public DurationInterface, public PitchInterface,
     public AttColoration,
+    public AttGraced,
     public AttNoteLogMensural,
     public AttStemmed,
     public AttTiepresent
@@ -58,6 +59,7 @@ public:
     virtual ~Note();
     virtual void Reset();
     virtual std::string GetClassName( ) { return "Note"; };
+    virtual ClassId Is() { return NOTE; };
     ///@}
     
     /**
@@ -74,6 +76,16 @@ public:
     void ResetDrawingTieAttr( );
     void SetDrawingTieAttr( );
     Tie *GetDrawingTieAttr( ) { return m_drawingTieAttr; };
+    ///@}
+    
+    /**
+     * @name Setter and getter for the Algnment the grace note is pointing to (NULL by default)
+     */
+    ///@{
+    Alignment *GetGraceAlignment();
+    void SetGraceAlignment( Alignment *graceAlignment );
+    bool HasGraceAlignment( ) { return (m_graceAlignment != NULL); };
+    void ResetGraceAlignment( ) { m_graceAlignment = NULL; };
     ///@}
     
     /**
@@ -103,45 +115,31 @@ public:
     /**
      * See Object::PrepareTieAttr
      */
-    virtual int PrepareTieAttr( ArrayPtrVoid params );
+    virtual int PrepareTieAttr( ArrayPtrVoid *params );
     
     /**
      * Functor for setting wordpos and connector ends
      * The functor is process by staff/layer/verse using an ArrayOfAttComparisons filter.
      */
-    virtual int PrepareLyrics( ArrayPtrVoid params );
+    virtual int PrepareLyrics( ArrayPtrVoid *params );
  
     /**
      * See Object::PreparePointersByLayer
      */
-    virtual int PreparePointersByLayer( ArrayPtrVoid params );
+    virtual int PreparePointersByLayer( ArrayPtrVoid *params );
     
     /**
      */
-    virtual int FillStaffCurrentTimeSpanning( ArrayPtrVoid params );
+    virtual int FillStaffCurrentTimeSpanning( ArrayPtrVoid *params );
     
     /**
      * Reset the drawing values before calling PrepareDrawing after changes.
      */
-    virtual int ResetDarwing( ArrayPtrVoid params );
+    virtual int ResetDarwing( ArrayPtrVoid *params );
     
 private:
     
-protected:
-    
-    /**
-     * @name Tie attributes are represented a pointers to Tie objects.
-     * There is one pointer for the initial attribute (TIE_i or TIE_m).
-     * The note with the initial attribute owns the Tie object and take care of deleting it
-     */
-    ///@{
-    Tie *m_drawingTieAttr;
-    ///@}
-    
 public:
-    /** indicates if the appoggiatura is slashed (i.e. it is an acciaccatura)
-     used with cueSize = true */
-    bool m_acciaccatura; // To be changed to Att grace="acc"
     /** embellishment on this note **/
     unsigned int m_embellishment; // To be changed to Att
     
@@ -163,9 +161,17 @@ public:
      */
     bool m_isDrawingAccidAttr;
     
-
-    
 private:
+    /**
+     * Tie attributes are represented a pointers to Tie objects.
+     * There is one pointer for the initial attribute (TIE_i or TIE_m).
+     * The note with the initial attribute owns the Tie object and take care of deleting it
+     */
+    Tie *m_drawingTieAttr;
+    /**
+     * An alignment for grace notes
+     */
+    Alignment *m_graceAlignment;
     
 };
 

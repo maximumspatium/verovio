@@ -434,6 +434,33 @@ data_FUNC Att::StrToFunc(std::string value)
     return FUNC_NONE;
 }
     
+std::string Att::GraceToStr(data_GRACE data)
+{
+    std::string value;
+    switch(data)
+    {
+        case GRACE_acc : value = "acc"; break;
+        case GRACE_unacc : value = "unacc"; break;
+        case GRACE_unknown : value = "unknown"; break;
+        default:
+            LogWarning("Unknown mode '%d'", data);
+            value = "";
+            break;
+    }
+    return value;
+}
+
+data_GRACE Att::StrToGrace(std::string value)
+{
+    if (value == "acc") return GRACE_acc;
+    else if (value == "unacc") return GRACE_unacc;
+    else if (value == "unknown") return GRACE_unknown;
+    else {
+        LogWarning("Unsupported pitch name '%s'", value.c_str() );
+    }
+    return GRACE_NONE;
+}
+    
 std::string Att::KeySignatureToStr(data_KEYSIGNATURE data)
 {
     std::string value;
@@ -685,6 +712,32 @@ data_MODUSMINOR Att::StrToModusminor(std::string value)
     return MODUSMINOR_NONE;
 }
     
+std::string Att::NumformatToStr(data_NUMFORMAT data)
+{
+    std::string value;
+    switch(data)
+    {
+        case NUMFORMAT_count : value = "count"; break;
+        case NUMFORMAT_ratio : value = "ratio"; break;
+        default:
+            LogWarning("Unknown numformat '%d'", data);
+            value = "";
+            break;
+    }
+    return value;
+}
+
+data_NUMFORMAT Att::StrToNumformat(std::string value)
+{
+    if (value == "count") return NUMFORMAT_count;
+    else if (value == "ratio") return NUMFORMAT_ratio;
+    else {
+        LogWarning("Unsupported numformat '%s'", value.c_str() );
+    }
+    // default
+    return NUMFORMAT_NONE;
+}
+    
 std::string Att::OctaveDisToStr( data_OCTAVE_DIS data )
 {
     std::string value;
@@ -827,6 +880,35 @@ data_PROLATIO Att::StrToProlatio(std::string value)
     // default
     return PROLATIO_NONE;
 }
+
+std::string Att::StaffRelToStr( data_STAFFREL data )
+{
+    std::string value;
+    switch(data)
+    {
+        case STAFFREL_above : value = "above"; break;
+        case STAFFREL_below : value = "below"; break;
+        case STAFFREL_within : value = "within"; break;
+        default:
+            LogWarning("Unknown staffrel '%d'", data);
+            value = "";
+            break;
+    }
+    return value;
+}
+
+data_STAFFREL Att::StrToStaffRel(std::string value)
+{
+    if (value == "below") return STAFFREL_below;
+    else if (value == "above") return STAFFREL_above;
+    else if (value == "within") return STAFFREL_within;
+    else {
+        LogWarning("Unsupported staffrel '%s'", value.c_str() );
+    }
+    // default
+    return STAFFREL_NONE;
+}
+
 
 std::string Att::StemDirectionToStr(data_STEMDIRECTION data)
 {
@@ -976,7 +1058,7 @@ data_WORDPOS Att::StrToWordPos(std::string value)
 
 bool AttComparison::operator()(Object *object)
 {
-    if  (typeid(*object) == *m_elementType) {
+    if  ( object->Is() == m_classId ) {
         return true;
     }
     return false;
@@ -984,7 +1066,7 @@ bool AttComparison::operator()(Object *object)
     
 bool AttComparison::MatchesType(Object *object)
 {
-    if  (typeid(*object) == *m_elementType) {
+    if  ( object->Is() == m_classId ) {
         return true;
     }
     return false;

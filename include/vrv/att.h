@@ -8,15 +8,14 @@
 #ifndef __VRV_ATT_H__
 #define __VRV_ATT_H__
 
-#include <typeinfo>
 #include <string>
 
 //----------------------------------------------------------------------------
 
-#include "attdef.h"
+#include "vrvdef.h"
 
 namespace vrv {
-    
+
 class Object;
 
 //----------------------------------------------------------------------------
@@ -131,6 +130,9 @@ public:
     
     std::string FuncToStr(data_FUNC data);
     data_FUNC StrToFunc(std::string value);
+    
+    std::string GraceToStr(data_GRACE data);
+    data_GRACE StrToGrace(std::string value);
         
     std::string KeySignatureToStr(data_KEYSIGNATURE data);
     data_KEYSIGNATURE StrToKeySignature(std::string value);
@@ -156,6 +158,9 @@ public:
     std::string ModusminorToStr(data_MODUSMINOR data);
     data_MODUSMINOR StrToModusminor(std::string value);
     
+    std::string NumformatToStr(data_NUMFORMAT data);
+    data_NUMFORMAT StrToNumformat(std::string value);
+    
     std::string OctaveDisToStr(data_OCTAVE_DIS data);
     data_OCTAVE_DIS StrToOctaveDis(std::string value);
     
@@ -170,6 +175,9 @@ public:
     
     std::string ProlatioToStr(data_PROLATIO data);
     data_PROLATIO StrToProlatio(std::string value);
+
+    std::string StaffRelToStr(data_STAFFREL data);
+    data_STAFFREL StrToStaffRel(std::string value);
     
     std::string StemDirectionToStr(data_STEMDIRECTION data);
     data_STEMDIRECTION StrToStemDirection(std::string value);
@@ -194,6 +202,33 @@ public:
 };
     
 //----------------------------------------------------------------------------
+// Interface
+//----------------------------------------------------------------------------
+
+class Interface
+{
+    
+public:
+    Interface() {};
+    virtual ~Interface() {};
+    
+    /**
+     *
+     */
+    void RegisterInterfaceAttClass( AttClassId attClassId ) { m_interfaceAttClasses.push_back( attClassId ); };
+    std::vector<AttClassId> *GetAttClasses() { return &m_interfaceAttClasses; };
+    
+    virtual InterfaceId IsInterface() { return INTERFACE; };
+    
+    
+private:
+    /**
+     *
+     */
+    std::vector<AttClassId> m_interfaceAttClasses;
+};
+    
+//----------------------------------------------------------------------------
 // AttComparison
 //----------------------------------------------------------------------------
 
@@ -201,18 +236,18 @@ class AttComparison
 {
     
 public:
-    AttComparison( const std::type_info *elementType ) {
-        m_elementType = elementType;
+    AttComparison( ClassId classId ) {
+        m_classId = classId;
     };
     
     virtual bool operator() (Object *object);
     
-    const std::type_info *GetType() { return m_elementType; };
+    ClassId GetType() { return m_classId; };
     
     bool MatchesType( Object *object );
     
 protected:
-    const std::type_info *m_elementType;
+    ClassId m_classId;
 };
     
 } // namespace vrv

@@ -97,7 +97,7 @@ void Doc::PrepareDrawing()
     
     if (m_drawingPreparationDone) {
         Functor resetDrawing( &Object::ResetDarwing );
-        this->Process( &resetDrawing, params );
+        this->Process( &resetDrawing, &params );
     }
     
     // Try to match all spanning elements (slur, tie, etc) by processing backward
@@ -106,7 +106,7 @@ void Doc::PrepareDrawing()
     params.push_back( &timeSpanningElements );
     params.push_back( &fillList );
     Functor prepareTimeSpanning( &Object::PrepareTimeSpanning );
-    this->Process( &prepareTimeSpanning, params, NULL, NULL, UNLIMITED_DEPTH, BACKWARD );
+    this->Process( &prepareTimeSpanning, &params, NULL, NULL, UNLIMITED_DEPTH, BACKWARD );
     
     // First we tried backward because nomrally the spanning elements are at the end of
     // the measure. However, in some case, one (or both) end points will appear afterwards
@@ -115,7 +115,7 @@ void Doc::PrepareDrawing()
     // but this time without filling the list (that is only will the remaining elements)
     if ( !timeSpanningElements.empty() ) {
         fillList = false;
-        this->Process( &prepareTimeSpanning, params );
+        this->Process( &prepareTimeSpanning, &params );
     }
     
     // If some are still there, then it is probably an issue in the encoding
@@ -137,7 +137,7 @@ void Doc::PrepareDrawing()
     // We first fill a tree of int with [staff/layer] and [staff/layer/verse] numbers (@n) to be process
     //LogElapsedTimeStart( );
     Functor prepareProcessingLists( &Object::PrepareProcessingLists );
-    this->Process( &prepareProcessingLists, params );
+    this->Process( &prepareProcessingLists, &params );
     
     // The tree is used to process each staff/layer/verse separatly
     // For this, we use a array of AttCommmonNComparison that looks for each object if it is of the type
@@ -156,8 +156,8 @@ void Doc::PrepareDrawing()
         for (layers = staves->second.child.begin(); layers != staves->second.child.end(); ++layers) {
             filters.clear();
             // Create ad comparison object for each type / @n
-            AttCommonNComparison matchStaff( &typeid(Staff), staves->first );
-            AttCommonNComparison matchLayer( &typeid(Layer), layers->first );
+            AttCommonNComparison matchStaff( STAFF, staves->first );
+            AttCommonNComparison matchLayer( LAYER, layers->first );
             filters.push_back( &matchStaff );
             filters.push_back( &matchLayer );
             
@@ -170,7 +170,7 @@ void Doc::PrepareDrawing()
             paramsTieAttr.push_back( &currentChord );
             Functor prepareTieAttr( &Object::PrepareTieAttr );
             Functor prepareTieAttrEnd( &Object::PrepareTieAttrEnd );
-            this->Process( &prepareTieAttr, paramsTieAttr, &prepareTieAttrEnd, &filters );
+            this->Process( &prepareTieAttr, &paramsTieAttr, &prepareTieAttrEnd, &filters );
         
             // After having processed one layer, we check if we have open ties - if yes, we
             // must reset them and they will be ignored.
@@ -189,15 +189,15 @@ void Doc::PrepareDrawing()
         for (layers = staves->second.child.begin(); layers != staves->second.child.end(); ++layers) {
             filters.clear();
             // Create ad comparison object for each type / @n
-            AttCommonNComparison matchStaff( &typeid(Staff), staves->first );
-            AttCommonNComparison matchLayer( &typeid(Layer), layers->first );
+            AttCommonNComparison matchStaff( STAFF, staves->first );
+            AttCommonNComparison matchLayer( LAYER, layers->first );
             filters.push_back( &matchStaff );
             filters.push_back( &matchLayer );
 
             ArrayPtrVoid paramsPointers;
             paramsPointers.push_back( &currentNote );
             Functor preparePointersByLayer( &Object::PreparePointersByLayer );
-            this->Process( &preparePointersByLayer, paramsPointers, NULL, &filters );
+            this->Process( &preparePointersByLayer, &paramsPointers, NULL, &filters );
         }
     }
     
@@ -211,9 +211,9 @@ void Doc::PrepareDrawing()
                 //std::cout << staves->first << " => " << layers->first << " => " << verses->first << '\n';
                 filters.clear();
                 // Create ad comparison object for each type / @n
-                AttCommonNComparison matchStaff( &typeid(Staff), staves->first );
-                AttCommonNComparison matchLayer( &typeid(Layer), layers->first );
-                AttCommonNComparison matchVerse( &typeid(Verse), verses->first );
+                AttCommonNComparison matchStaff( STAFF, staves->first );
+                AttCommonNComparison matchLayer( LAYER, layers->first );
+                AttCommonNComparison matchVerse( VERSE, verses->first );
                 filters.push_back( &matchStaff );
                 filters.push_back( &matchLayer );
                 filters.push_back( &matchVerse );
@@ -229,7 +229,7 @@ void Doc::PrepareDrawing()
                 paramsLyrics.push_back( &lastButOneNote );
                 Functor prepareLyrics( &Object::PrepareLyrics );
                 Functor prepareLyricsEnd( &Object::PrepareLyricsEnd );
-                this->Process( &prepareLyrics, paramsLyrics, &prepareLyricsEnd, &filters );
+                this->Process( &prepareLyrics, &paramsLyrics, &prepareLyricsEnd, &filters );
             }
         }
     }
@@ -241,7 +241,7 @@ void Doc::PrepareDrawing()
     timeSpanningElements.clear();
     params.push_back( &timeSpanningElements );
     Functor fillStaffCurrentTimeSpanning( &Object::FillStaffCurrentTimeSpanning );
-    this->Process( &fillStaffCurrentTimeSpanning, params );
+    this->Process( &fillStaffCurrentTimeSpanning, &params );
     
     // Something must be wrong in the encoding because a TimeSpanningInterface was left open
     if ( !timeSpanningElements.empty() ) {
@@ -294,7 +294,7 @@ void Doc::SetCurrentScoreDef( bool force )
     Functor setCurrentScoreDef( &Object::SetCurrentScoreDef );
     
     //LogElapsedTimeStart( );
-    this->Process( &setCurrentScoreDef, params );
+    this->Process( &setCurrentScoreDef, &params );
     //LogElapsedTimeEnd ( "Setting scoreDefs" );
     
     m_currentScoreDefDone = true;
@@ -323,10 +323,8 @@ void Doc::CastOff( )
     params.push_back( &shift );
     params.push_back( &systemFullWidth );
     Functor castOffSystems( &Object::CastOffSystems );
-    contentSystem->Process( &castOffSystems, params );
+    contentSystem->Process( &castOffSystems, &params );
     delete contentSystem;
-    
-    //LogDebug("Layout: %d systems", contentPage->GetSystemCount());
     
     // Reset the scoreDef at the beginning of each system
     this->SetCurrentScoreDef( true );
@@ -347,7 +345,7 @@ void Doc::CastOff( )
     params.push_back( &shift );
     params.push_back( &pageFullHeight );
     Functor castOffPages( &Object::CastOffPages );
-    contentPage->Process( &castOffPages, params );
+    contentPage->Process( &castOffPages, &params );
     delete contentPage;
     
     //LogDebug("Layout: %d pages", this->GetChildCount());
@@ -368,7 +366,7 @@ void Doc::UnCastOff( )
     params.push_back( contentSystem );
 
     Functor unCastOff( &Object::UnCastOff );
-    this->Process( &unCastOff, params );
+    this->Process( &unCastOff, &params );
     
     this->ClearChildren();
     
@@ -393,30 +391,28 @@ int Doc::GetPageCount( )
 }
     
 
-short Doc::GetLeftMargin( const std::type_info *elementType )
+char Doc::GetLeftMargin( const ClassId classId  )
 {
-
-    if (typeid(Barline) == *elementType) return 5;
-    else if (typeid(Chord) == *elementType) return 10;
-    else if (typeid(Clef) == *elementType) return -20;
-    else if (typeid(MRest) == *elementType) return 30;
-    else if (typeid(Note) == *elementType) return 10;
-    return 0;
-
+    if (classId == BAR_LINE) return m_style->m_leftMarginBarline;
+    else if (classId == BAR_LINE_ATTR) return m_style->m_leftMarginBarlineAttr;
+    else if (classId == CHORD) return m_style->m_leftMarginChord;
+    else if (classId == CLEF) return m_style->m_leftMarginClef;
+    else if (classId == MREST) return m_style->m_leftMarginMRest;
+    else if (classId == NOTE) return m_style->m_leftMarginNote;
+    return m_style->m_leftMarginDefault;
 }
     
-short Doc::GetRightMargin( const std::type_info *elementType )
+char Doc::GetRightMargin( const ClassId classId )
 {
-    if (typeid(Clef) == *elementType) return 30;
-    else if (typeid(KeySig) == *elementType)  return 30;
-    else if (typeid(Mensur) == *elementType) return 30;
-    else if (typeid(MeterSig) == *elementType) return 30;
-    else if (typeid(Barline) == *elementType) return 30;
-    else if (typeid(BarlineAttr) == *elementType) return 0;
-    else if (typeid(MRest) == *elementType) return 30;
-    else if (typeid(MultiRest) == *elementType) return 30;
-    //else if (typeid(Note) == *elementType) return 10;
-    return 10;
+    if (classId == BAR_LINE) return m_style->m_rightMarginBarline;
+    else if (classId == BAR_LINE_ATTR) return m_style->m_rightMarginBarlineAttr;
+    else if (classId == CLEF) return m_style->m_rightMarginClef;
+    else if (classId == KEY_SIG)  return m_style->m_rightMarginKeySig;
+    else if (classId == MENSUR) return m_style->m_rightMarginMensur;
+    else if (classId == METER_SIG) return m_style->m_rightMarginMeterSig;
+    else if (classId == MREST) return m_style->m_rightMarginMRest;
+    else if (classId == MULTI_REST) return m_style->m_rightMarginMultiRest;
+    return m_style->m_rightMarginDefault;
 }
     
 void Doc:: SetPageHeight( int pageHeight )
@@ -467,7 +463,6 @@ Page *Doc::SetDrawingPage( int pageIdx )
         return m_drawingPage;
     }
     m_drawingPage = dynamic_cast<Page*>(this->GetChild( pageIdx ) );
-    
     assert( m_drawingPage );
     
     // we use the page members only if set (!= -1) 
@@ -542,13 +537,6 @@ Page *Doc::SetDrawingPage( int pageIdx )
     m_drawingBeamWhiteWidth[1] = (m_drawingBeamWhiteWidth[0] * m_drawingSmallStaffRatio[0]) / m_drawingSmallStaffRatio[1];
     
     m_drawingFontHeight = CalcMusicFontSize();
-    
-    /*
-    m_drawingFontHeightAscent[0][0] = floor(LEIPZIG_ASCENT * (double)m_drawingFontHeight / LEIPZIG_UNITS_PER_EM);
-	m_drawingFontHeightAscent[0][1] = (m_drawingFontHeightAscent[0][0] * m_drawingGraceRatio[0]) / m_drawingGraceRatio[1];
-    m_drawingFontHeightAscent[1][0] = (m_drawingFontHeightAscent[0][0] * m_drawingSmallStaffRatio[0]) / m_drawingSmallStaffRatio[1];
-	m_drawingFontHeightAscent[1][1] = (m_drawingFontHeightAscent[1][0] * m_drawingGraceRatio[0]) / m_drawingGraceRatio[1];
-    */
     
 	m_drawingSmuflFonts[0][0].SetPointSize( m_drawingFontHeight );
     m_drawingSmuflFonts[0][1].SetPointSize( (m_drawingFontHeight * m_drawingGraceRatio[0]) / m_drawingGraceRatio[1] );
@@ -631,12 +619,12 @@ int Doc::GetAdjustedDrawingPageWidth()
 // Doc functors methods
 //----------------------------------------------------------------------------
 
-int Doc::PrepareLyricsEnd( ArrayPtrVoid params )
+int Doc::PrepareLyricsEnd( ArrayPtrVoid *params )
 {
     // param 0: the current Syl
     // param 1: the last Note
-    Syl **currentSyl = static_cast<Syl**>(params[0]);
-    Note **lastNote = static_cast<Note**>(params[1]);
+    Syl **currentSyl = static_cast<Syl**>((*params)[0]);
+    Note **lastNote = static_cast<Note**>((*params)[1]);
     
     if ( (*currentSyl) && (*lastNote) ) {
         (*currentSyl)->SetEnd(*lastNote);

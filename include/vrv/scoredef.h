@@ -155,6 +155,7 @@ public:
     virtual ~ScoreDef();    
     virtual void Reset();
     virtual std::string GetClassName( ) { return "ScoreDef"; };
+    virtual ClassId Is() { return SCORE_DEF; };
     ///@}
     
 	void AddStaffGrp( StaffGrp *staffGrp );
@@ -180,7 +181,7 @@ public:
      * Set the redraw flag to all staffDefs.
      * This is necessary at the beginning or when a scoreDef occurs.
      */
-    void SetRedrawFlags( bool clef, bool keysig, bool mensur, bool meterSig );
+    void SetRedrawFlags( bool clef, bool keySig, bool mensur, bool meterSig, bool keySigCancellation );
     
     /**
      * @name Set and get the scoreDef drawing flags for clef, keysig and mensur.
@@ -199,7 +200,7 @@ public:
      * For ScoreDef, this means only moving them since their width is not taken into
      * account
      */
-    virtual int CastOffSystems( ArrayPtrVoid params );
+    virtual int CastOffSystems( ArrayPtrVoid *params );
     
 protected:
     /**
@@ -240,11 +241,16 @@ public:
     virtual Object* Clone() { return new StaffGrp(*this); };
     virtual void Reset();
     virtual std::string GetClassName( ) { return "StaffGrp"; };
+    virtual ClassId Is() { return STAFF_GRP; };
     ///@}
 	
+    /**
+     * @name Methods for adding allowed content
+     */
+    ///@{
 	void AddStaffDef( StaffDef *staffDef );
-    
 	void AddStaffGrp( StaffGrp *staffGrp );
+    ///@}
     
     /**
      * @name Set and get the staffGrp @symbol
@@ -307,6 +313,7 @@ public:
     virtual Object* Clone() { return new StaffDef(*this); };
     virtual void Reset();
     virtual std::string GetClassName( ) { return "StaffDef"; };
+    virtual ClassId Is() { return STAFF_DEF; };
     ///@}
     
     /**
@@ -319,6 +326,8 @@ public:
     void SetDrawClef( bool drawClef ) { m_drawClef = drawClef; };
     bool DrawKeySig() const { return m_drawKeySig; };
     void SetDrawKeySig( bool drawKeySig ) { m_drawKeySig = drawKeySig; };
+    bool DrawKeySigCancellation() const { return m_drawKeySigCancellation; };
+    void SetDrawKeySigCancellation( bool drawKeySigCancellation ) { m_drawKeySigCancellation = drawKeySigCancellation; };
     bool DrawMensur() const { return m_drawMensur; };
     void SetDrawMensur( bool drawMensur ) { m_drawMensur = drawMensur; };
     bool DrawMeterSig() const { return m_drawMeterSig; };
@@ -335,7 +344,7 @@ public:
      * Calls ScoreDef::Replace.
      * param 0: a pointer to the scoreDef we are going to replace the staffDefs
      */
-    virtual int ReplaceStaffDefsInScoreDef( ArrayPtrVoid params );
+    virtual int ReplaceStaffDefsInScoreDef( ArrayPtrVoid *params );
     
     /**
      * Set flags for the staff set for indicating whether clefs, keysig, etc. needs to be redrawn.
@@ -344,7 +353,7 @@ public:
      * param 1: bool keysig flag.
      * param 2: bool the mensur flag.
      */
-    virtual int SetStaffDefRedrawFlags( ArrayPtrVoid params );
+    virtual int SetStaffDefRedrawFlags( ArrayPtrVoid *params );
     
 private:
     
@@ -357,6 +366,7 @@ private:
     ///@{
     bool m_drawClef;
     bool m_drawKeySig;
+    bool m_drawKeySigCancellation;
     bool m_drawMensur;
     bool m_drawMeterSig;
     ///@}

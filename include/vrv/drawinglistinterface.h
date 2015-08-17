@@ -65,6 +65,48 @@ private:
     ListOfObjects m_drawingList;
 };
     
+//----------------------------------------------------------------------------
+// KeySigDrawingInterface
+//----------------------------------------------------------------------------
+
+/**
+ * This class is an interface for drawing variables for KeySig and KeySigAttr.
+ * It is not an abstract class but should not be instanciate directly.
+ */
+class KeySigDrawingInterface
+{
+public:
+    /**
+     * @name Constructors, destructors, reset and class name methods
+     * Reset method reset all attribute classes
+     */
+    ///@{
+    KeySigDrawingInterface();
+    virtual ~KeySigDrawingInterface();
+    virtual void Reset();
+    ///@}
+    
+private:
+    
+public:
+    /**
+     * Variables for storing cancellation introduced by the key sig.
+     * The values are ScoreOrStaffDefAttrInterface::ReplaceKeySig
+     */
+    data_ACCIDENTAL_EXPLICIT m_drawingCancelAccidType;
+    char m_drawingCancelAccidCount;
+    /**
+     * Equivalent to @key.sig.show and @showchange, but set for drawing
+     * KeySig has no equivalent in MEI and will be true and false by default
+     * See KeySig::KeySig( KeySigAttr *keySigAttr ) for initialisation
+     */
+    bool m_drawingShow;
+    bool m_drawingShowchange;
+    
+private:
+    
+};
+    
 } // namespace vrv 
 
 #endif

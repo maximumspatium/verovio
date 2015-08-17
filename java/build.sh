@@ -24,6 +24,7 @@ FILES="../src/accid.cpp \
              ../src/drawinglistinterface.cpp \
              ../src/durationinterface.cpp \
              ../src/editorial.cpp \
+             ../src/floatingelement.cpp \
              ../src/glyph.cpp \
              ../src/io.cpp \
              ../src/iodarms.cpp \
@@ -36,7 +37,6 @@ FILES="../src/accid.cpp \
              ../src/mensur.cpp \
              ../src/metersig.cpp \
              ../src/measure.cpp \
-             ../src/measureelement.cpp \
              ../src/mrest.cpp \
              ../src/multirest.cpp \
              ../src/note.cpp \
@@ -47,6 +47,7 @@ FILES="../src/accid.cpp \
              ../src/view.cpp \
              ../src/view_beam.cpp \
              ../src/view_element.cpp \
+             ../src/view_floating.cpp \
              ../src/view_graph.cpp \
              ../src/view_mensural.cpp \
              ../src/view_page.cpp \
@@ -60,6 +61,8 @@ FILES="../src/accid.cpp \
              ../src/svgdevicecontext.cpp \
              ../src/syl.cpp \
              ../src/system.cpp \
+             ../src/textdirective.cpp \
+             ../src/textdirinterface.cpp \
              ../src/tie.cpp \
              ../src/timeinterface.cpp \
              ../src/toolkit.cpp \

@@ -62,9 +62,14 @@ bool dir_exists (string dir) {
     }
 }
 
+void display_version() {
+    cerr << "Verovio " << GetVersion() << endl;
+}
+
 void display_usage() {
     
-    cerr << "Verovio " << GetVersion() << endl << "Usage:" << endl << endl;
+    display_version();
+    cerr << endl << "Usage:" << endl << endl;
     cerr << " verovio [-f format] [-s scale] [-t type] [-r resources] [-o outfile] infile" << endl << endl;
     
     // These need to be kept in alphabetical order:
@@ -91,6 +96,8 @@ void display_usage() {
     cerr << " -s, --scale=FACTOR         Scale percent (default is " << DEFAULT_SCALE << ")" << endl;
     
     cerr << " -t, --type=OUTPUT_TYPE     Select output format: mei, svg (default is svg)" << endl;
+    
+    cerr << " -v, --version              Display the version number" << endl;
 
     cerr << " -w, --page-width=WIDTH     Specify the page width (default is " << DEFAULT_PAGE_WIDTH << ")" << endl;
     
@@ -151,6 +158,7 @@ int main(int argc, char** argv)
     int show_bounding_boxes = 0;
     int page = 1;
     int show_help = 0;
+    int show_version = 0;
     
     // Create the toolkit instance without loading the font because
     // the resource path might be specified in the parameters
@@ -193,11 +201,12 @@ int main(int argc, char** argv)
         {"spacing-staff",       required_argument,  0, 0},
         {"spacing-system",      required_argument,  0, 0},
         {"type",                required_argument,  0, 't'},
+        {"version",             no_argument,        &show_version, 1},
         {0, 0, 0, 0}
     };
     
     int option_index = 0;
-    while ((c = getopt_long(argc, argv, "b:f:h:o:p:r:s:t:w:", long_options, &option_index)) != -1)
+    while ((c = getopt_long(argc, argv, "b:f:h:o:p:r:s:t:w:v", long_options, &option_index)) != -1)
     {                
         switch (c)
         {
@@ -261,6 +270,10 @@ int main(int argc, char** argv)
                      exit(1);
                 }
                 break;
+                
+            case 'v':
+                show_version = 1;
+                break;
             
             case 'w':
                 if ( !toolkit.SetPageWidth( atoi(optarg) ) ) {
@@ -276,6 +289,11 @@ int main(int argc, char** argv)
             default:
                 break;
         }
+    }
+    
+    if (show_version) {
+        display_version();
+        exit(0);
     }
     
     if (show_help) {
@@ -496,15 +514,14 @@ int main(int argc, char** argv)
     if (all_pages) {
         to = toolkit.GetPageCount() + 1;
     }
-        
-    int p;
-    for (p = from; p < to; p++) {
-        std::string cur_outfile = outfile;
-        if (all_pages) {
-            cur_outfile += StringFormat("_%03d", p);
-        }
-        // Create SVG or mei
-        if (outformat == "svg") {
+    
+    if (outformat == "svg") {
+        int p;
+        for (p = from; p < to; p++) {
+            std::string cur_outfile = outfile;
+            if (all_pages) {
+                cur_outfile += StringFormat("_%03d", p);
+            }
             cur_outfile += ".svg";
             if (std_output) {
                 cout << toolkit.RenderToSvg( p );
@@ -514,25 +531,36 @@ int main(int argc, char** argv)
                 exit(1);
             }
             else {
-                cerr << "Output written to " << cur_outfile << endl;
+                cerr << "Output written to " << cur_outfile << "." << endl;
             }
-            // Write it to file
-            
-        } else {
-            // To be implemented in Toolkit
-            cur_outfile += ".mei";
+        }
+    }
+    else {
+        if (all_pages) {
+            toolkit.SetScoreBasedMei( true );
+            outfile += ".mei";
             if (std_output) {
-                cout << toolkit.GetMEI( p );
+                cerr << "MEI output of all pages to standard output is not possible." << endl;
+                exit(1);
+
             }
-            else if ( !toolkit.SaveFile( cur_outfile ) ) {
-                cerr << "Unable to write MEI to " << cur_outfile << "." << endl;
+            else if ( !toolkit.SaveFile( outfile ) ) {
+                cerr << "Unable to write MEI to " << outfile << "." << endl;
                 exit(1);
             }
             else {
-                cerr << "Output written to " << cur_outfile << endl;
+                cerr << "Output written to " << outfile <<  "." << endl;
             }
         }
-        
+        else {
+            if (std_output) {
+                cout << toolkit.GetMEI( page );
+            }
+            else {
+                cerr << "MEI output of one page is available only to standard output." << endl;
+                exit(1);
+            }
+        }
     }
     
     return 0;
