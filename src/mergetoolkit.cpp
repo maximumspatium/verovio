@@ -165,7 +165,6 @@ namespace vrv {
                 MergeStaffs(staff_1, staff_2);
                 staff_2->m_parent = NULL;
                 current_measure->DetachChild(1);
-                //delete staff_2;
             }
         }
         
