@@ -144,6 +144,7 @@ int main(int argc, char** argv)
     string outformat = "svg";
     string font = "";
     bool std_output = false;
+    bool is_merge = false;
     
     // Init random number generator for uuids
     std::srand((unsigned int)std::time(0));
@@ -186,7 +187,7 @@ int main(int argc, char** argv)
         {"format",              required_argument,  0, 'f'},
         {"help",                no_argument,        &show_help, 1},
         {"ignore-layout",       no_argument,        &ignore_layout, 1},
-        {"merge",               no_argument,        0,  1},
+        {"merge",               no_argument,        0,  0},
         {"no-layout",           no_argument,        &no_layout, 1},
         {"no-mei-hdr",          no_argument,        &no_mei_hdr, 1},
         {"no-justification",    no_argument,        &no_justification, 1},
@@ -233,8 +234,11 @@ int main(int argc, char** argv)
                         exit(1);
                     }
                 }
+                else
+                    if (strcmp(long_options[option_index].name,"merge") == 0) {
+                        is_merge = true;
+                    }
                 break;
-                
             case 'b':
                 if ( !toolkit.SetBorder( atoi(optarg) ) ) {
                     exit(1);
@@ -300,10 +304,8 @@ int main(int argc, char** argv)
         display_usage();
         exit(0);
     }
-
     
-    
-    if (strcmp(long_options[option_index].name,"merge") == 0) {
+    if (is_merge) {
         // Set the various flags
         mtoolkit.SetAdjustPageHeight(adjust_page_height);
         mtoolkit.SetNoLayout(no_layout);
@@ -399,7 +401,7 @@ int main(int argc, char** argv)
         }
         
         int p;
-        for (p = from; p <= to; p++) {
+        for (p = from; p < to; p++) {
             std::string cur_outfile = outfile;
             if (all_pages) {
                 cur_outfile += StringFormat("_%03d", p);
