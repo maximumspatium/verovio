@@ -168,6 +168,10 @@ namespace vrv {
                 current_measure->DetachChild(1);
             }
         }
+        // need to remove 2nd staff from scoredef
+        StaffGrp* staffgrp_layer1 = dynamic_cast<StaffGrp*>(m_doc.m_scoreDef.m_children.at(0));
+        StaffGrp* staffgrp_layer2 = dynamic_cast<StaffGrp*>(staffgrp_layer1->m_children.at(0));
+        staffgrp_layer2->RemoveChildAt(1);
         return true;
     }
  } //namespace vrv
