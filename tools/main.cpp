@@ -306,12 +306,8 @@ int main(int argc, char** argv)
     }
     
     if (is_merge) {
-        // Set the various flags
-        mtoolkit.SetAdjustPageHeight(adjust_page_height);
-        mtoolkit.SetNoLayout(no_layout);
-        mtoolkit.SetIgnoreLayout(ignore_layout);
-        mtoolkit.SetNoJustification(no_justification);
-        mtoolkit.SetShowBoundingBoxes(show_bounding_boxes);
+        // Force no layout with merge (we load everything in one page)
+        mtoolkit.SetNoLayout(true);
         
         if (optind <= argc - 1) {
             infile = string(argv[optind]);
@@ -321,8 +317,6 @@ int main(int argc, char** argv)
             display_usage();
             exit(1);
         }
-        
-        
         
         // Make sure the user uses a valid Resource path
         // Save many headaches for empty SVGs
@@ -337,17 +331,6 @@ int main(int argc, char** argv)
             exit(1);
         }
         
-        // Load a specified font
-        if (!font.empty() && !mtoolkit.SetFont(font)) {
-            cerr << "Font '" << font << "' could not be loaded." << endl;
-            exit(1);
-        }
-        
-        if (outformat != "svg" && outformat != "mei") {
-            cerr << "Output format can only be: mei svg" << endl;
-            exit(1);
-        }
-        
         // Make sure we provide a file name or output to std output with std input
         if ((infile == "-") && (outfile.empty())) {
             cerr << "Standard input can be used only with standard output or output filename." << endl;
@@ -359,67 +342,33 @@ int main(int argc, char** argv)
             outfile = removeExtension(infile);
         }
         else if (outfile == "-") {
-            DisableLog();
-            std_output = true;
+            cerr << "Standard output cannot be used with --merge." << endl;
+            exit(1);
         }
         else {
             outfile = removeExtension(outfile);
         }
+        outfile += ".mei";
         
-        // Load the std input or load the file
-        if ( infile == "-" ) {
-            stringstream data_stream;
-            for (string line; getline(cin, line);) {
-                data_stream << line << endl;
-            }
-            if ( !mtoolkit.LoadString( data_stream.str() ) ) {
-                cerr << "The input could not be loaded" << endl;
-                exit(1);
-            }
+        // Load the file
+        if ( !mtoolkit.LoadFile( infile ) ) {
+            cerr << "The file '" << infile << "' could not be open" << endl;
+            exit(1);
+        }
+        
+        if ( !mtoolkit.Merge() ) {
+            cerr << "Merging failed" << endl;
+            exit(1);
+            
+        }
+        
+        mtoolkit.SetScoreBasedMei( true );
+        if ( !mtoolkit.SaveFile( outfile ) ) {
+            cerr << "Unable to write MEI to " << outfile << "." << endl;
+            exit(1);
         }
         else {
-            if ( !mtoolkit.LoadFile( infile ) ) {
-                cerr << "The file '" << infile << "' could not be open" << endl;
-                exit(1);
-            }
-        }
-        
-        // Check the page range
-        if (page > mtoolkit.GetPageCount()) {
-            cerr << "The page requested (" << page << ") is not in the page range (max is " << toolkit.GetPageCount() << ")" << endl;
-            exit(1);
-        }
-        if (page < 1) {
-            cerr << "The page number has to be greater than 0" << endl;
-            exit(1);
-        }
-        
-        int from = page;
-        int to = page + 1;
-        if (all_pages) {
-            to = mtoolkit.GetPageCount() + 1;
-        }
-        
-        int p;
-        for (p = from; p < to; p++) {
-            std::string cur_outfile = outfile;
-            if (all_pages) {
-                cur_outfile += StringFormat("_%03d", p);
-            }
-            string output = mtoolkit.Merge(p);
-            // To be implemented in Toolkit
-            cur_outfile += ".mei";
-            if (std_output) {
-                cout << output;
-            }
-            else if ( !mtoolkit.SaveFile( cur_outfile ) ) {
-                cerr << "Unable to write MEI to " << cur_outfile << "." << endl;
-                exit(1);
-            }
-            else {
-                cerr << "Output written to " << cur_outfile << endl;
-            }
-            
+            cerr << "Output written to " << outfile <<  "." << endl;
         }
         return 0;
     }

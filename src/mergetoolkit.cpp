@@ -148,9 +148,10 @@ namespace vrv {
     }
     
     
-    std::string MergeToolkit::Merge(int pageNo)
+    bool MergeToolkit::Merge()
     {
-        pageNo--;
+        int pageNo = 0;
+        // Since we do no layout, we have only one page with one system
         Page* current_page = dynamic_cast<Page*>((&m_doc)->GetChild(pageNo));
         ArrayOfObjects systems = current_page->m_children;
         for (int i = 0; i < systems.size(); i++) {
@@ -167,9 +168,6 @@ namespace vrv {
                 current_measure->DetachChild(1);
             }
         }
-        
-        MeiOutput meioutput( &m_doc, "" );
-        meioutput.SetScoreBasedMEI( true);
-        return meioutput.GetOutput( pageNo );
+        return true;
     }
  } //namespace vrv
