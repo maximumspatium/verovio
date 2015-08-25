@@ -39,12 +39,13 @@ namespace vrv {
         
     }
     
-    void MergeToolkit::MergeMeasures(Measure* m1, Measure* m2)
+    bool MergeToolkit::MergeMeasures(Measure* m1, Measure* m2)
     {
             // may be needed for the future
+        return true;
     }
 
-    void MergeToolkit::MergeStaffs(Staff* s1, Staff* s2)
+    bool MergeToolkit::MergeStaffs(Staff* s1, Staff* s2)
     {
         // assume 1 layer
         Layer* layer_1 = dynamic_cast<Layer*>(s1->m_children.front());
@@ -52,9 +53,10 @@ namespace vrv {
         if (layer_1 != NULL && layer_2 != NULL) {
             MergeLayers(layer_1, layer_2);
         }
+        return true;
     }
     
-    void MergeToolkit::MergeLayers(Layer* l1, Layer* l2)
+    bool MergeToolkit::MergeLayers(Layer* l1, Layer* l2)
     {
         ArrayOfObjects children_1 = l1->m_children;
         ArrayOfObjects children_2 = l2->m_children;
@@ -77,10 +79,11 @@ namespace vrv {
                 MergeNotes(note_1, note_2);
             }
         }
+        return true;
         
     }
     
-    void MergeToolkit::MergeBeams(Beam* b1, Beam* b2)
+    bool MergeToolkit::MergeBeams(Beam* b1, Beam* b2)
     {
         int smaller = (int)(std::min(b1->m_children.size(), b2->m_children.size()));
         for (int k = 0; k < smaller; k++) {
@@ -96,12 +99,12 @@ namespace vrv {
                 MergeNotes(note_1, note_2);
             }
         }
-        
+        return true;
         
         
     }
     
-    void MergeToolkit::MergeNotes(Note* n1, Note* n2)
+    bool MergeToolkit::MergeNotes(Note* n1, Note* n2)
     {
             if (n1->GetActualDur() == n2->GetActualDur() &&
                 n1->GetDiatonicPitch() == n2->GetDiatonicPitch()) {
@@ -120,16 +123,17 @@ namespace vrv {
                     }
                 }
             }
+        return true;
 
         
     }
 
-    void MergeToolkit::MergeRests(Rest* r1, Rest* r2)
+    bool MergeToolkit::MergeRests(Rest* r1, Rest* r2)
     {
-        
+        return true;
     }
     
-    void MergeToolkit::MergeVerses(Verse* v1, Verse* v2, Note* n1, Note* n2, int index)
+    bool MergeToolkit::MergeVerses(Verse* v1, Verse* v2, Note* n1, Note* n2, int index)
     {
         if (v1 != NULL && v2!= NULL) {
             n1->DetachChild(index);
@@ -145,6 +149,7 @@ namespace vrv {
             app->AddLemOrRdg(rdg);
             n1->AddEditorialElement(app);
         }
+        return true;
     }
     
     
