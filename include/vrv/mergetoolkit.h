@@ -51,19 +51,24 @@ namespace vrv {
         bool Merge();
         
     private:
-        void MergeMeasures(Measure* m1, Measure* m2);
+        /**
+         * Changed methods from void to bool
+         * because it may be useful later on
+         * when merging the notes that are not exactly the same
+         */
+        bool MergeMeasures(Measure* m1, Measure* m2);
         
-        void MergeStaffs(Staff* s1, Staff* s2);
+        bool MergeStaffs(Staff* s1, Staff* s2);
         
-        void MergeLayers(Layer* l1, Layer* l2);
+        bool MergeLayers(Layer* l1, Layer* l2);
 
-        void MergeBeams(Beam* b1, Beam* b2);
+        bool MergeBeams(Beam* b1, Beam* b2);
         
-        void MergeNotes(Note* n1, Note* n2);
+        bool MergeNotes(Note* n1, Note* n2);
         
-        void MergeRests(Rest* r1, Rest* r2);
+        bool MergeRests(Rest* r1, Rest* r2);
         
-        void MergeVerses(Verse* v1, Verse* v2, Note* n1, Note* n2, int index);
+        bool MergeVerses(Verse* v1, Verse* v2, Note* n1, Note* n2, int index);
         
     };
     
