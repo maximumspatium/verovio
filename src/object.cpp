@@ -331,16 +331,6 @@ void Object::AddEditorialElement( EditorialElement *child )
     Modify();
 }
 
-bool Object::operator==( Object& other )
-{
-    // This should never happen.
-    // The comparison is performed in the CmpFile::Align method.
-    // We expect to compare only Note, Rest, etc object for which we have an overwritten method
-    LogError( "Missing comparison operator for '%s'", this->GetClassName().c_str() );
-    assert( false );
-    return false;
-}
-
 int Object::GetChildIndex( const Object *child )
 {
     ArrayOfObjects::iterator iter;
@@ -943,62 +933,24 @@ int Object::SetCurrentScoreDef( ArrayPtrVoid *params )
     if (this->Is() == SYSTEM) {
         System *system = dynamic_cast<System*>(this);
         assert( system );
-        
         currentScoreDef->SetRedrawFlags( true, true, false, false, false );
         return FUNCTOR_CONTINUE;
     }
     
     // starting a new scoreDef
-    
     if (this->Is() == SCORE_DEF) {
         ScoreDef *scoreDef= dynamic_cast<ScoreDef*>(this);
         assert( scoreDef );
-        bool drawClef = false;
-        bool drawKeySig = false;
-        bool drawMensur = false;
-        bool drawMeterSig = false;
-        if (scoreDef->GetClef()) {
-            drawClef = true;
-        }
-        if (scoreDef->GetKeySig()) {
-            drawKeySig = true;
-        }
-        if (scoreDef->GetMensur()) {
-            drawMensur = true;
-        }
-        if (scoreDef->GetMeterSig()) {
-            drawMeterSig = true;
-        }
         // Replace the current scoreDef with the new one, including its content (staffDef)
-        currentScoreDef->Replace(scoreDef);
-        // The keySig cancellation flag is the same as keySig because we draw cancellation with new key sig
-        currentScoreDef->SetRedrawFlags( drawClef, drawKeySig, drawMensur, drawMeterSig, drawKeySig );
+        currentScoreDef->ReplaceDrawingValues(scoreDef);
         return FUNCTOR_CONTINUE;
     }
 
-
     // starting a new staffDef
-    // Because staffDef have to be included in a scoreDef, a new staffDef was already
-    // replaced by the new scoreDef (see above). Here we only need to reset the drawing flags
-    
     if (this->Is() == STAFF_DEF) {
         StaffDef *staffDef= dynamic_cast<StaffDef*>(this);
         assert( staffDef );
-        StaffDef *tmpStaffDef = currentScoreDef->GetStaffDef( staffDef->GetN() );
-        assert( tmpStaffDef );
-        if (staffDef->GetClef()) {
-            tmpStaffDef->SetDrawClef( true );
-        }
-        if (staffDef->GetKeySig()) {
-            tmpStaffDef->SetDrawKeySig( true );
-            tmpStaffDef->SetDrawKeySigCancellation( true );
-        }
-        if (staffDef->GetMensur()) {
-            tmpStaffDef->SetDrawMensur( true );
-        }
-        if (staffDef->GetMeterSig()) {
-            tmpStaffDef->SetDrawMeterSig( true );
-        }
+        currentScoreDef->ReplaceDrawingValues(staffDef);
     }
     
     // starting a new staff
@@ -1024,7 +976,7 @@ int Object::SetCurrentScoreDef( ArrayPtrVoid *params )
                 layer->SetDrawingStemDir(STEMDIRECTION_down);
             }
         }
-        layer->SetDrawingAndCurrentValues( currentScoreDef, (*currentStaffDef) );
+        layer->SetDrawingAndCurrentValues( (*currentStaffDef) );
         return FUNCTOR_CONTINUE;
     }
     
@@ -1033,7 +985,7 @@ int Object::SetCurrentScoreDef( ArrayPtrVoid *params )
         Clef *clef = dynamic_cast<Clef*>(this);
         assert( clef );
         assert( *currentStaffDef );
-        (*currentStaffDef)->ReplaceClef( clef );
+        (*currentStaffDef)->SetCurrentClef( new Clef( *clef ) );
         return FUNCTOR_CONTINUE;
     }
     
@@ -1042,7 +994,7 @@ int Object::SetCurrentScoreDef( ArrayPtrVoid *params )
         KeySig *keysig = dynamic_cast<KeySig*>(this);
         assert( keysig );
         assert( *currentStaffDef );
-        (*currentStaffDef)->ReplaceKeySig( keysig );
+        (*currentStaffDef)->SetCurrentKeySig( new KeySig( *keysig ) );
         return FUNCTOR_CONTINUE;
     }
     
@@ -1106,10 +1058,10 @@ int Object::SetBoundingBoxGraceXShift( ArrayPtrVoid *params )
     // the negative offset it the part of the bounding box that overflows on the left
     // |____x_____|
     //  ---- = negative offset
-    //int negative_offset = - (note->m_contentBB_x1) + (doc->GetLeftMargin(&typeid(*note)) * doc->m_drawingUnit[0] / PARAM_DENOMINATOR);
+    //int negative_offset = - (note->m_contentBB_x1) + (doc->GetLeftMargin(&typeid(*note)) * doc->GetDrawingUnit(100) / PARAM_DENOMINATOR);
     int negative_offset = - note->m_contentBB_x1;
     if ( (*min_pos) > 0 ) {
-        //(*min_pos) += (doc->GetLeftMargin(&typeid(*note)) * doc->m_drawingUnit[0] / PARAM_DENOMINATOR);
+        //(*min_pos) += (doc->GetLeftMargin(&typeid(*note)) * doc->GetDrawingUnit(100) / PARAM_DENOMINATOR);
     }
     
     // this should never happen (but can with glyphs not exactly registered at position x=0 in the SMuFL font used
@@ -1123,9 +1075,9 @@ int Object::SetBoundingBoxGraceXShift( ArrayPtrVoid *params )
     }
     
     // the next minimal position if given by the right side of the bounding box + the spacing of the element
-    (*min_pos) = note->GetGraceAlignment()->GetXRel() + note->m_contentBB_x2 + doc->GetRightMargin( NOTE ) * doc->m_drawingUnit[0] / PARAM_DENOMINATOR;
+    (*min_pos) = note->GetGraceAlignment()->GetXRel() + note->m_contentBB_x2 + doc->GetRightMargin( NOTE ) * doc->GetDrawingUnit(100) / PARAM_DENOMINATOR;
     //(*min_pos) = note->GetGraceAlignment()->GetXRel() + note->m_contentBB_x2;
-    //note->GetGraceAlignment()->SetMaxWidth( note->m_contentBB_x2 + doc->GetRightMargin(&typeid(*note)) * doc->m_drawingUnit[0] / PARAM_DENOMINATOR );
+    //note->GetGraceAlignment()->SetMaxWidth( note->m_contentBB_x2 + doc->GetRightMargin(&typeid(*note)) * doc->GetDrawingUnit(100) / PARAM_DENOMINATOR );
     note->GetGraceAlignment()->SetMaxWidth( note->m_contentBB_x2 );
     
     return FUNCTOR_CONTINUE;
@@ -1159,7 +1111,7 @@ int Object::SetBoundingBoxXShift( ArrayPtrVoid *params )
         Layer *current_layer = dynamic_cast<Layer*>(this);
         assert( current_layer );
         // reset it as the minimum position to the step (HARDCODED)
-        (*min_pos) = 30 * doc->m_drawingUnit[0] / 10;
+        (*min_pos) = 30 * doc->GetDrawingUnit(100) / 10;
         // set scoreDef attr
         if (current_layer->GetDrawingClef()) {
             current_layer->GetDrawingClef()->SetBoundingBoxXShift( params );
@@ -1219,14 +1171,14 @@ int Object::SetBoundingBoxXShift( ArrayPtrVoid *params )
     // |____x_____|
     //  ---- = negative offset
     int negative_offset = - (current->m_contentBB_x1);
-    if (!current->IsGraceNote()) negative_offset += (doc->GetLeftMargin( current->Is() ) * doc->m_drawingUnit[0] / PARAM_DENOMINATOR);
+    if (!current->IsGraceNote()) negative_offset += (doc->GetLeftMargin( current->Is() ) * doc->GetDrawingUnit(100) / PARAM_DENOMINATOR);
     
     // this should never happen (but can with glyphs not exactly registered at position x=0 in the SMuFL font used
     if ( negative_offset < 0 ) negative_offset = 0;
     
-    if (current->Is() == MREST) {
+    if ((current->Is() == MREST) || (current->Is() == MRPT)) {
         // With MRest, the only thing we want to do it keep their with as possible measure with (if only MRest in all staves/layers)
-        int width =  current->m_contentBB_x2 + doc->GetRightMargin( current->Is() ) * doc->m_drawingUnit[0] / PARAM_DENOMINATOR + negative_offset ;
+        int width =  current->m_contentBB_x2 + doc->GetRightMargin( current->Is() ) * doc->GetDrawingUnit(100) / PARAM_DENOMINATOR + negative_offset ;
         // Keep it if more than the current measure width
         (*measure_width) = std::max( (*measure_width), width );
         (*min_pos) = 0;
@@ -1261,8 +1213,8 @@ int Object::SetBoundingBoxXShift( ArrayPtrVoid *params )
     }
 
     // the next minimal position if given by the right side of the bounding box + the spacing of the element
-    (*min_pos) = current->GetAlignment()->GetXRel() + current->m_contentBB_x2 + doc->GetRightMargin( current->Is() ) * doc->m_drawingUnit[0] / PARAM_DENOMINATOR;
-    current->GetAlignment()->SetMaxWidth( current->m_contentBB_x2 + doc->GetRightMargin( current->Is() ) * doc->m_drawingUnit[0] / PARAM_DENOMINATOR );
+    (*min_pos) = current->GetAlignment()->GetXRel() + current->m_contentBB_x2 + doc->GetRightMargin( current->Is() ) * doc->GetDrawingUnit(100) / PARAM_DENOMINATOR;
+    current->GetAlignment()->SetMaxWidth( current->m_contentBB_x2 + doc->GetRightMargin( current->Is() ) * doc->GetDrawingUnit(100) / PARAM_DENOMINATOR );
     
     return FUNCTOR_CONTINUE;
 }

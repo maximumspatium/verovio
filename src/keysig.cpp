@@ -7,6 +7,7 @@
 
 
 #include "keysig.h"
+#include "scoredefinterface.h"
 
 //----------------------------------------------------------------------------
 
@@ -54,33 +55,30 @@ int KeySig::octave_map[2][9][7] = {
 //----------------------------------------------------------------------------
 
 KeySig::KeySig():
-    LayerElement("ksig-"), KeySigDrawingInterface(),
+    LayerElement("ksig-"),
     AttAccidental(),
     AttPitch()
 {
     Init();
-    Reset();
 }
 
 KeySig::KeySig(int alterationNumber, data_ACCIDENTAL_EXPLICIT alterationType):
-    LayerElement("ksig-"), KeySigDrawingInterface(),
+    LayerElement("ksig-"),
     AttAccidental(),
     AttPitch()
 {
     Init();
-    Reset();
     
     m_alterationNumber = alterationNumber;
     m_alterationType = alterationType;
 }
     
-KeySig::KeySig( KeySigAttr *keySigAttr ):
-    LayerElement("ksig-"), KeySigDrawingInterface( *keySigAttr ),
+KeySig::KeySig( ScoreDefInterface *keySigAttr ):
+    LayerElement("ksig-"),
     AttAccidental(),
     AttPitch()
 {
     Init();
-    // Do not call reset because we key values passed by the keySigAttr arg
     
     char key = keySigAttr->GetKeySig() - KEYSIGNATURE_0;
     /* see data_KEYSIGNATURE order; key will be:
@@ -115,6 +113,7 @@ void KeySig::Init()
 {
     RegisterAttClass(ATT_ACCIDENTAL);
     RegisterAttClass(ATT_PITCH);
+    Reset();
 }
 
 KeySig::~KeySig()
@@ -124,11 +123,16 @@ KeySig::~KeySig()
 void KeySig::Reset()
 {
     LayerElement::Reset();
-    KeySigDrawingInterface::Reset();
     ResetAccidental();
     ResetPitch();
     m_alterationNumber = 0;
     m_alterationType = ACCIDENTAL_EXPLICIT_n;
+    
+    // key change drawing values
+    m_drawingCancelAccidType = ACCIDENTAL_EXPLICIT_n;
+    m_drawingCancelAccidCount = 0;
+    m_drawingShow = true;
+    m_drawingShowchange = false;
 }
     
     
@@ -214,33 +218,6 @@ int KeySig::GetOctave(data_ACCIDENTAL_EXPLICIT alterationType, data_PITCHNAME pi
     }
     
     return octave_map[alter_set][key_set][pitch - 1] + OCTAVE_OFFSET;
-}
-
-    
-//----------------------------------------------------------------------------
-// KeySigAttr
-//----------------------------------------------------------------------------
-
-KeySigAttr::KeySigAttr():
-    Object(), KeySigDrawingInterface(),
-    AttKeySigDefaultLog(),
-    AttKeySigDefaultVis()
-{
-    RegisterAttClass(ATT_KEYSIGDEFAULTLOG);
-    RegisterAttClass(ATT_KEYSIGDEFAULTVIS);
-    Reset();
-}
-
-KeySigAttr::~KeySigAttr()
-{
-}
-
-void KeySigAttr::Reset()
-{
-    Object::Reset();
-    KeySigDrawingInterface::Reset();
-    ResetKeySigDefaultLog();
-    ResetKeySigDefaultVis();
 }
 
 } // namespace vrv

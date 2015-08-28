@@ -111,6 +111,12 @@ public:
      */
     virtual int SetDrawingXY( ArrayPtrVoid *params );
     
+    /**
+     * Functor for setting mRpt drawing numbers (if required)
+     * See implementation and Object::PrepareRpt
+     */
+    virtual int PrepareRpt( ArrayPtrVoid *params );
+    
 public:
 	/**
      * Number of lines copied from the staffDef for fast access when drawing
@@ -137,7 +143,7 @@ public:
 	/** portee invisible (wolfgang legacy) */
 	char invisible;
 	/** taille. 0 = normale1 = petite (wolfgang legacy) (to be set as scale in staffDef) */
-	unsigned char staffSize;
+	int m_drawingStaffSize;
 
 private:    
     /**

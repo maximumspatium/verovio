@@ -30,7 +30,9 @@
 #include "multirest.h"
 #include "note.h"
 #include "page.h"
+#include "proport.h"
 #include "rest.h"
+#include "rpt.h"
 #include "slur.h"
 #include "space.h"
 #include "staff.h"
@@ -38,6 +40,7 @@
 #include "system.h"
 #include "textdirective.h"
 #include "tie.h"
+#include "trem.h"
 #include "tuplet.h"
 #include "verse.h"
 #include "vrv.h"
@@ -192,6 +195,10 @@ bool MeiOutput::WriteObject( Object *object )
         m_currentNode = m_currentNode.append_child("beam");
         WriteMeiBeam( m_currentNode, dynamic_cast<Beam*>(object) );
     }
+    else if (object->Is() == BEAT_RPT) {
+        m_currentNode = m_currentNode.append_child("beatRpt");
+        WriteMeiBeatRpt( m_currentNode, dynamic_cast<BeatRpt*>(object) );
+    }
     else if (object->Is() == CHORD) {
         m_currentNode = m_currentNode.append_child( "chord" );
         WriteMeiChord( m_currentNode, dynamic_cast<Chord*>(object) );
@@ -224,13 +231,29 @@ bool MeiOutput::WriteObject( Object *object )
         m_currentNode = m_currentNode.append_child("mRest");
         WriteMeiMRest( m_currentNode, dynamic_cast<MRest*>(object) );
     }
+    else if (object->Is() == MRPT) {
+        m_currentNode = m_currentNode.append_child("mRpt");
+        WriteMeiMRpt( m_currentNode, dynamic_cast<MRpt*>(object) );
+    }
+    else if (object->Is() == MRPT2) {
+        m_currentNode = m_currentNode.append_child("mRpt2");
+        WriteMeiMRpt2( m_currentNode, dynamic_cast<MRpt2*>(object) );
+    }
     else if (object->Is() == MULTI_REST) {
         m_currentNode = m_currentNode.append_child("multiRest");
         WriteMeiMultiRest( m_currentNode, dynamic_cast<MultiRest*>(object) );
     }
+    else if (object->Is() == MULTI_RPT) {
+        m_currentNode = m_currentNode.append_child("multiRpt");
+        WriteMeiMultiRpt( m_currentNode, dynamic_cast<MultiRpt*>(object) );
+    }
     else if (object->Is() == NOTE) {
         m_currentNode = m_currentNode.append_child("note");
         WriteMeiNote( m_currentNode, dynamic_cast<Note*>(object) );
+    }
+    else if (object->Is() == PROPORT) {
+        m_currentNode = m_currentNode.append_child("proport");
+        WriteMeiProport( m_currentNode, dynamic_cast<Proport*>(object) );
     }
     else if (object->Is() == REST) {
         m_currentNode = m_currentNode.append_child("rest");
@@ -399,23 +422,9 @@ bool MeiOutput::WriteMeiScoreDef( pugi::xml_node currentNode, ScoreDef *scoreDef
     assert( scoreDef );
     
     currentNode.append_attribute( "xml:id" ) =  UuidToMeiStr( scoreDef ).c_str();
-    if (scoreDef->GetClefAttr()) {
-        scoreDef->GetClefAttr()->WriteCleffingLog(currentNode);
-    }
-    if (scoreDef->GetKeySigAttr()) {
-        scoreDef->GetKeySigAttr()->WriteKeySigDefaultLog(currentNode);
-        scoreDef->GetKeySigAttr()->WriteKeySigDefaultVis(currentNode);
-    }
-    if ( scoreDef->GetMensurAttr() ) {
-        scoreDef->GetMensurAttr()->WriteMensuralLog(currentNode);
-        scoreDef->GetMensurAttr()->WriteMensuralShared(currentNode);
-    }
-    if ( scoreDef->GetMeterSigAttr() ) {
-        scoreDef->GetMeterSigAttr()->WriteMeterSigDefaultLog(currentNode);
-        scoreDef->GetMeterSigAttr()->WriteMeterSigDefaultVis(currentNode);
-    }
+
+    WriteScoreDefInterface(currentNode, scoreDef);
     
-    // this needs to be fixed
     return true;
 }
 
@@ -424,12 +433,11 @@ bool MeiOutput::WriteMeiStaffGrp( pugi::xml_node currentNode, StaffGrp *staffGrp
     assert( staffGrp );
     
     currentNode.append_attribute( "xml:id" ) = UuidToMeiStr( staffGrp ).c_str();
-    if ( staffGrp->GetSymbol() != STAFFGRP_NONE ) {
-        currentNode.append_attribute( "symbol" ) = StaffGrpSymbolToStr( staffGrp->GetSymbol() ).c_str();
-    }
-    if ( staffGrp->GetBarthru() ) {
-        currentNode.append_attribute( "barthru" ) = BoolToStr( staffGrp->GetBarthru() ).c_str();
-    }
+    
+    staffGrp->WriteCommon(currentNode);
+    staffGrp->WriteLabelsAddl(currentNode);
+    staffGrp->WriteStaffgroupingsym(currentNode);
+    staffGrp->WriteStaffGrpVis(currentNode);
     
     return true;
 }
@@ -442,23 +450,10 @@ bool MeiOutput::WriteMeiStaffDef( pugi::xml_node currentNode, StaffDef *staffDef
     
     staffDef->WriteCommon(currentNode);
     staffDef->WriteLabelsAddl(currentNode);
+    staffDef->WriteScalable(currentNode);
     staffDef->WriteStaffDefVis(currentNode);
     
-    if (staffDef->GetClefAttr()) {
-        staffDef->GetClefAttr()->WriteCleffingLog(currentNode);
-    }
-    if (staffDef->GetKeySigAttr()) {
-        staffDef->GetKeySigAttr()->WriteKeySigDefaultLog(currentNode);
-        staffDef->GetKeySigAttr()->WriteKeySigDefaultVis(currentNode);
-    }
-    if ( staffDef->GetMensurAttr() ) {
-        staffDef->GetMensurAttr()->WriteMensuralLog(currentNode);
-        staffDef->GetMensurAttr()->WriteMensuralShared(currentNode);
-    }
-    if ( staffDef->GetMeterSigAttr() ) {
-        staffDef->GetMeterSigAttr()->WriteMeterSigDefaultLog(currentNode);
-        staffDef->GetMeterSigAttr()->WriteMeterSigDefaultVis(currentNode);
-    }
+    WriteScoreDefInterface(currentNode, staffDef);
     
     return true;
 }
@@ -470,10 +465,6 @@ bool MeiOutput::WriteMeiMeasure( pugi::xml_node currentNode, Measure *measure )
     currentNode.append_attribute( "xml:id" ) =  UuidToMeiStr( measure ).c_str();
 
     measure->WriteCommon(currentNode);
-
-    // here we transfer the barLine object values to @left and @right
-    measure->SetLeft( measure->GetLeftBarlineType() );
-    measure->SetRight( measure->GetRightBarlineType() );
     measure->WriteMeasureLog(currentNode);
     
     return true;
@@ -495,6 +486,8 @@ void MeiOutput::WriteMeiSlur( pugi::xml_node currentNode, Slur *slur )
     assert( slur );
     
     currentNode.append_attribute( "xml:id" ) =  UuidToMeiStr( slur ).c_str();
+    
+    slur->WriteCurvature(currentNode);
     
     WriteTimeSpanningInterface(currentNode, slur);
     
@@ -570,6 +563,14 @@ void MeiOutput::WriteMeiBeam( pugi::xml_node currentNode, Beam *beam )
     
     WriteLayerElement( currentNode, beam );
     return;
+}
+    
+void MeiOutput::WriteMeiBeatRpt( pugi::xml_node currentNode, BeatRpt *beatRpt )
+{
+    assert( beatRpt );
+    
+    WriteLayerElement( currentNode, beatRpt );
+    beatRpt->WriteBeatRptVis(currentNode);
 }
 
 void MeiOutput::WriteMeiChord( pugi::xml_node currentNode, Chord *chord )
@@ -652,6 +653,20 @@ void MeiOutput::WriteMeiMRest( pugi::xml_node currentNode, MRest *mRest )
     WriteLayerElement( currentNode, mRest );
     return;
 }
+    
+void MeiOutput::WriteMeiMRpt( pugi::xml_node currentNode, MRpt *mRpt )
+{
+    assert( mRpt );
+    
+    WriteLayerElement( currentNode, mRpt );
+}
+    
+    void MeiOutput::WriteMeiMRpt2( pugi::xml_node currentNode, MRpt2 *mRpt2 )
+    {
+        assert( mRpt2 );
+        
+        WriteLayerElement( currentNode, mRpt2 );
+    }
 
 void MeiOutput::WriteMeiMultiRest( pugi::xml_node currentNode, MultiRest *multiRest )
 {
@@ -660,6 +675,13 @@ void MeiOutput::WriteMeiMultiRest( pugi::xml_node currentNode, MultiRest *multiR
     WriteLayerElement( currentNode, multiRest );
     multiRest->WriteNumbered(currentNode);
     return;
+}
+
+void MeiOutput::WriteMeiMultiRpt( pugi::xml_node currentNode, MultiRpt *multiRpt )
+{
+    assert( multiRpt );
+    
+    WriteLayerElement( currentNode, multiRpt );
 }
 
 void MeiOutput::WriteMeiNote( pugi::xml_node currentNode, Note *note )
@@ -685,6 +707,13 @@ void MeiOutput::WriteMeiRest( pugi::xml_node currentNode, Rest *rest )
     WriteLayerElement( currentNode, rest );
     WriteDurationInterface(currentNode, rest);
     WritePositionInterface(currentNode, rest);
+    return;
+}
+
+void MeiOutput::WriteMeiProport( pugi::xml_node currentNode, Proport *proport )
+{
+    WriteLayerElement( currentNode, proport );
+    //meterSig->WriteMeterSigLog(currentNode);
     return;
 }
     
@@ -752,7 +781,7 @@ void MeiOutput::WriteDurationInterface(pugi::xml_node element, vrv::DurationInte
     interface->WriteStaffident(element);
 }
     
-void MeiOutput::WritePitchInterface(pugi::xml_node element, vrv::PitchInterface *interface)
+void MeiOutput::WritePitchInterface(pugi::xml_node element, PitchInterface *interface)
 {
     assert( interface );
     
@@ -761,14 +790,28 @@ void MeiOutput::WritePitchInterface(pugi::xml_node element, vrv::PitchInterface 
     interface->WritePitch(element);
 }
     
-void MeiOutput::WritePositionInterface(pugi::xml_node element, vrv::PositionInterface *interface)
+void MeiOutput::WritePositionInterface(pugi::xml_node element, PositionInterface *interface)
 {
     assert( interface );
     
     interface->WriteStafflocPitched(element);
 }
+    
+void MeiOutput::WriteScoreDefInterface(pugi::xml_node element, ScoreDefInterface *interface)
+{
+    assert( interface );
+    
+    interface->WriteCleffingLog(element);
+    interface->WriteKeySigDefaultLog(element);
+    interface->WriteKeySigDefaultVis(element);
+    interface->WriteMensuralLog(element);
+    interface->WriteMensuralShared(element);
+    interface->WriteMeterSigDefaultLog(element);
+    interface->WriteMeterSigDefaultVis(element);
+    interface->WriteMultinummeasures(element);
+}
 
-void MeiOutput::WriteTextDirInterface(pugi::xml_node element, vrv::TextDirInterface *interface)
+void MeiOutput::WriteTextDirInterface(pugi::xml_node element, TextDirInterface *interface)
 {
     assert( interface );
     
@@ -777,7 +820,7 @@ void MeiOutput::WriteTextDirInterface(pugi::xml_node element, vrv::TextDirInterf
     interface->WriteStaffident(element);
 }
     
-void MeiOutput::WriteTimeSpanningInterface(pugi::xml_node element, vrv::TimeSpanningInterface *interface)
+void MeiOutput::WriteTimeSpanningInterface(pugi::xml_node element, TimeSpanningInterface *interface)
 {
     assert( interface );
     
@@ -792,7 +835,7 @@ void MeiOutput::WriteSameAsAttr(pugi::xml_node element, Object *object)
     }
 }
 
-void MeiOutput::WriteUnsupportedAttr(pugi::xml_node element, vrv::Object *object)
+void MeiOutput::WriteUnsupportedAttr(pugi::xml_node element, Object *object)
 {
     ArrayOfStrAttr::iterator iter;
     for (iter = object->m_unsupported.begin(); iter != object->m_unsupported.end(); iter++) {
@@ -867,12 +910,6 @@ bool MeiOutput::WriteMeiAnnot( pugi::xml_node currentNode, Annot *annot )
     
     return true;
 };
-    
-std::string MeiOutput::BoolToStr(bool value)
-{
-    if (value) return "true";
-    return "false";
-}
 
 std::string MeiOutput::DocTypeToStr(DocType type)
 {
@@ -890,21 +927,6 @@ std::string MeiOutput::DocTypeToStr(DocType type)
 	return value;   
 }
 
-std::string MeiOutput::StaffGrpSymbolToStr(StaffGrpSymbol symbol)
-{
- 	std::string value;
-	switch(symbol)
-	{	case STAFFGRP_LINE : value = "line"; break;
-		case STAFFGRP_BRACE : value = "brace"; break;
-        case STAFFGRP_BRACKET : value = "bracket"; break;
-        default:
-            LogWarning("Unknown staffGrp @symbol  '%d'", symbol);
-            value = "line";
-            break;
-	}
-	return value;
-}
-
 //----------------------------------------------------------------------------
 // MeiInput
 //----------------------------------------------------------------------------
@@ -913,7 +935,6 @@ MeiInput::MeiInput( Doc *doc, std::string filename ) :
 	FileInputStream( doc )
 {
     m_filename = filename;
-    m_doc->m_fname = GetFilename( filename );
     m_page = NULL;
     m_system = NULL;
     //
@@ -1238,25 +1259,7 @@ bool MeiInput::ReadMeiScoreDef( Object *parent, pugi::xml_node scoreDef )
     }
     SetMeiUuid(scoreDef, vrvScoreDef);
     
-    ClefAttr clefAttr;
-    if ( clefAttr.ReadCleffingLog( scoreDef ) ) {
-        vrvScoreDef->ReplaceClef( &clefAttr );
-    }
-    KeySigAttr keySigAttr;
-    if ( keySigAttr.ReadKeySigDefaultLog( scoreDef ) || keySigAttr.ReadKeySigDefaultVis( scoreDef ) ) {
-        keySigAttr.ReadKeySigDefaultVis( scoreDef ); // not great, but we need to do it in case we have both and the first one succeeded
-        vrvScoreDef->ReplaceKeySig( &keySigAttr );
-    }
-    MeterSigAttr meterSig;
-    if ( meterSig.ReadMeterSigDefaultLog( scoreDef ) || meterSig.ReadMeterSigDefaultVis( scoreDef ) ) {
-        meterSig.ReadMeterSigDefaultVis( scoreDef );  // same as above, needs refactoring
-        vrvScoreDef->ReplaceMeterSig( &meterSig );
-    }
-    MensurAttr mensur;
-    if ( mensur.ReadMensuralLog( scoreDef ) || mensur.ReadMensuralShared( scoreDef ) ) {
-        mensur.ReadMensuralShared( scoreDef ); // same as above, needs refactoring
-        vrvScoreDef->ReplaceMensur( &mensur );
-    }
+    ReadScoreDefInterface(scoreDef, vrvScoreDef);
     
     AddScoreDef(parent, vrvScoreDef);
     
@@ -1300,12 +1303,10 @@ bool MeiInput::ReadMeiStaffGrp( Object *parent, pugi::xml_node staffGrp )
     StaffGrp *vrvStaffGrp = new StaffGrp( );
     SetMeiUuid( staffGrp, vrvStaffGrp );
     
-    if ( staffGrp.attribute( "symbol" ) ) {
-        vrvStaffGrp->SetSymbol( StrToStaffGrpSymbol( staffGrp.attribute( "symbol" ).value() ) );
-    }
-    if ( staffGrp.attribute( "barthru" ) ) {
-        vrvStaffGrp->SetBarthru( StrToBool( staffGrp.attribute( "barthru" ).value() ) );
-    }
+    vrvStaffGrp->ReadCommon(staffGrp);
+    vrvStaffGrp->ReadLabelsAddl(staffGrp);
+    vrvStaffGrp->ReadStaffGrpVis(staffGrp);
+    vrvStaffGrp->ReadStaffgroupingsym(staffGrp);
     
     AddStaffGrp(parent, vrvStaffGrp);
     
@@ -1354,31 +1355,14 @@ bool MeiInput::ReadMeiStaffDef( Object *parent, pugi::xml_node staffDef )
     
     vrvStaffDef->ReadCommon(staffDef);
     vrvStaffDef->ReadLabelsAddl(staffDef);
+    vrvStaffDef->ReadScalable(staffDef);
     vrvStaffDef->ReadStaffDefVis(staffDef);
     
     if ( !vrvStaffDef->HasN() ) {
         LogWarning("No @n on <staffDef> might yield unpredictable results");
     }
     
-    ClefAttr clefAttr;
-    if ( clefAttr.ReadCleffingLog( staffDef ) ) {
-        vrvStaffDef->ReplaceClef( &clefAttr );
-    }
-    KeySigAttr keySigAttr;
-    if ( keySigAttr.ReadKeySigDefaultLog( staffDef ) || keySigAttr.ReadKeySigDefaultVis( staffDef ) ) {
-        keySigAttr.ReadKeySigDefaultVis( staffDef ); // not great, but we need to do it in case we have both and the first one succeeded
-        vrvStaffDef->ReplaceKeySig( &keySigAttr );
-    }
-    MeterSigAttr meterSig;
-    if ( meterSig.ReadMeterSigDefaultLog( staffDef ) || meterSig.ReadMeterSigDefaultVis( staffDef ) ) {
-        meterSig.ReadMeterSigDefaultVis( staffDef );  // same as above, needs refactoring
-        vrvStaffDef->ReplaceMeterSig( &meterSig );
-    }
-    MensurAttr mensur;
-    if ( mensur.ReadMensuralLog( staffDef ) || mensur.ReadMensuralShared( staffDef ) ) {
-        mensur.ReadMensuralShared( staffDef ); // same as above, needs refactoring
-        vrvStaffDef->ReplaceMensur( &mensur );
-    }
+    ReadScoreDefInterface(staffDef, vrvStaffDef);
     
     // This could me moved to an AddMeasure method for consistency with AddLayerElement
     if ( parent->Is() == STAFF_GRP ) {
@@ -1402,10 +1386,6 @@ bool MeiInput::ReadMeiMeasure( Object *parent, pugi::xml_node measure )
     
     vrvMeasure->ReadCommon(measure);
     vrvMeasure->ReadMeasureLog(measure);
-    
-    // here we transfer the @left and @right values to the barLine objects
-    vrvMeasure->SetLeftBarlineType( vrvMeasure->GetLeft() );
-    vrvMeasure->SetRightBarlineType( vrvMeasure->GetRight() );
     
     // This could me moved to an AddMeasure method for consistency with AddLayerElement
     if ( parent->Is() == SYSTEM ) {
@@ -1482,6 +1462,8 @@ bool MeiInput::ReadMeiSlur( Object *parent, pugi::xml_node slur )
 {
     Slur *vrvSlur = new Slur();
     SetMeiUuid(slur, vrvSlur);
+    
+    vrvSlur->ReadCurvature(slur);
     
     ReadTimeSpanningInterface(slur, vrvSlur);
     
@@ -1610,6 +1592,9 @@ bool MeiInput::ReadMeiLayerChildren( Object *parent, pugi::xml_node parentNode, 
         else if ( elementName == "beam" ) {
             success = ReadMeiBeam( parent, xmlElement);
         }
+        else if ( elementName == "beatRpt" ) {
+            success = ReadMeiBeatRpt( parent, xmlElement);
+        }
         else if ( elementName == "chord" ) {
             success = ReadMeiChord( parent, xmlElement);
         }
@@ -1640,8 +1625,20 @@ bool MeiInput::ReadMeiLayerChildren( Object *parent, pugi::xml_node parentNode, 
         else if ( elementName == "mRest" ) {
             success = ReadMeiMRest( parent, xmlElement );
         }
+        else if ( elementName == "mRpt" ) {
+            success = ReadMeiMRpt( parent, xmlElement );
+        }
+        else if ( elementName == "mRpt2" ) {
+            success = ReadMeiMRpt2( parent, xmlElement );
+        }
         else if ( elementName == "multiRest" ) {
             success = ReadMeiMultiRest( parent, xmlElement );
+        }
+        else if ( elementName == "multiRpt" ) {
+            success = ReadMeiMultiRpt( parent, xmlElement );
+        }
+        else if ( elementName == "proport" ) {
+            success = ReadMeiProport( parent, xmlElement );
         }
         else if ( elementName == "space" ) {
             success = ReadMeiSpace( parent, xmlElement );
@@ -1717,6 +1714,16 @@ bool MeiInput::ReadMeiBeam( Object *parent, pugi::xml_node beam )
         LogWarning("<beam> with only one note");
     }
     
+    return true;
+}
+    
+bool MeiInput::ReadMeiBeatRpt( Object *parent, pugi::xml_node beatRpt )
+{
+    BeatRpt *vrvBeatRpt = new BeatRpt();
+    ReadLayerElement(beatRpt, vrvBeatRpt);
+    vrvBeatRpt->ReadBeatRptVis(beatRpt);
+    
+    AddLayerElement(parent, vrvBeatRpt);
     return true;
 }
     
@@ -1822,7 +1829,25 @@ bool MeiInput::ReadMeiMRest( Object *parent, pugi::xml_node mRest )
     AddLayerElement(parent, vrvMRest);
     return true;
 }
+    
+bool MeiInput::ReadMeiMRpt( Object *parent, pugi::xml_node mRpt )
+{
+    MRpt *vrvMRpt = new MRpt();
+    ReadLayerElement(mRpt, vrvMRpt);
+    
+    AddLayerElement(parent, vrvMRpt);
+    return true;
+}
 
+bool MeiInput::ReadMeiMRpt2( Object *parent, pugi::xml_node mRpt2 )
+{
+    MRpt2 *vrvMRpt2 = new MRpt2();
+    ReadLayerElement(mRpt2, vrvMRpt2);
+    
+    AddLayerElement(parent, vrvMRpt2);
+    return true;
+}
+    
 bool MeiInput::ReadMeiMultiRest( Object *parent, pugi::xml_node multiRest )
 {
 	MultiRest *vrvMultiRest = new MultiRest( );
@@ -1832,6 +1857,15 @@ bool MeiInput::ReadMeiMultiRest( Object *parent, pugi::xml_node multiRest )
     
     AddLayerElement(parent, vrvMultiRest);
 	return true;
+}
+
+bool MeiInput::ReadMeiMultiRpt( Object *parent, pugi::xml_node multiRpt )
+{
+    MultiRpt *vrvMultiRpt = new MultiRpt();
+    ReadLayerElement(multiRpt, vrvMultiRpt);
+    
+    AddLayerElement(parent, vrvMultiRpt);
+    return true;
 }
 
 bool MeiInput::ReadMeiNote( Object *parent, pugi::xml_node note )
@@ -1869,6 +1903,18 @@ bool MeiInput::ReadMeiRest( Object *parent, pugi::xml_node rest )
     ReadPositionInterface(rest, vrvRest);
 	
     AddLayerElement(parent, vrvRest);
+    return true;
+}
+
+bool MeiInput::ReadMeiProport( Object *parent, pugi::xml_node proport )
+{
+    Proport *vrvProport = new Proport();
+    ReadLayerElement(proport, vrvProport);
+    
+    //vrvMeterSig->ReadMeterSigLog(meterSig);
+    vrvProport->ReadDurationRatio( proport );
+    
+    AddLayerElement(parent, vrvProport);
     return true;
 }
 
@@ -1965,6 +2011,19 @@ bool MeiInput::ReadPitchInterface(pugi::xml_node element, PitchInterface *interf
 bool MeiInput::ReadPositionInterface(pugi::xml_node element, PositionInterface *interface)
 {
     interface->ReadStafflocPitched(element);
+    return true;
+}
+    
+bool MeiInput::ReadScoreDefInterface(pugi::xml_node element, ScoreDefInterface *interface)
+{
+    interface->ReadCleffingLog(element);
+    interface->ReadKeySigDefaultLog(element);
+    interface->ReadKeySigDefaultVis(element);
+    interface->ReadMensuralLog(element);
+    interface->ReadMensuralShared(element);
+    interface->ReadMeterSigDefaultLog(element);
+    interface->ReadMeterSigDefaultVis(element);
+    interface->ReadMultinummeasures(element);
     return true;
 }
     
@@ -2424,12 +2483,6 @@ void MeiInput::SetMeiUuid( pugi::xml_node element, Object *object )
     object->SetUuid( element.attribute( "xml:id" ).value() );
     element.remove_attribute("xml:id");
 }
-
-bool MeiInput::StrToBool(std::string value)
-{
-    if (value == "false") return false;
-	return true;
-}
    
 DocType MeiInput::StrToDocType(std::string type)
 {
@@ -2441,18 +2494,6 @@ DocType MeiInput::StrToDocType(std::string type)
 	}
     // default
 	return Raw;
-}
-
-StaffGrpSymbol MeiInput::StrToStaffGrpSymbol(std::string symbol)
-{
-    if (symbol == "line") return STAFFGRP_LINE;
-    else if (symbol == "brace") return STAFFGRP_BRACE;
-    else if (symbol == "bracket") return STAFFGRP_BRACKET;
-    else {
-        LogWarning("Unknown staffGrp @symbol '%s'", symbol.c_str() );
-	}
-    // default
-	return STAFFGRP_LINE;
 }
     
 std::string MeiInput::ExtractUuidFragment(std::string refUuid)

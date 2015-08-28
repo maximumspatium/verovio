@@ -312,14 +312,14 @@ AttBeamrend::~AttBeamrend() {
 }
 
 void AttBeamrend::ResetBeamrend() {
-    m_rend = "";
+    m_rend = BEATRPT_REND_NONE;
     m_slopeDbl = 0.0;
 }
 
 bool AttBeamrend::ReadBeamrend(  pugi::xml_node element ) {
     bool hasAttribute = false;
     if (element.attribute("rend")) {
-        this->SetRend(StrToStr(element.attribute("rend").value()));
+        this->SetRend(StrToBeatrptRend(element.attribute("rend").value()));
         element.remove_attribute("rend");
         hasAttribute = true;
     }
@@ -334,7 +334,7 @@ bool AttBeamrend::ReadBeamrend(  pugi::xml_node element ) {
 bool AttBeamrend::WriteBeamrend(  pugi::xml_node element ) {
     bool wroteAttribute = false;
     if (this->HasRend()) {
-        element.append_attribute("rend") = StrToStr(this->GetRend()).c_str();
+        element.append_attribute("rend") = BeatrptRendToStr(this->GetRend()).c_str();
         wroteAttribute = true;
     }
     if (this->HasSlope()) {
@@ -346,7 +346,7 @@ bool AttBeamrend::WriteBeamrend(  pugi::xml_node element ) {
 
 bool AttBeamrend::HasRend( )
 {
-    return (m_rend != "");
+    return (m_rend != BEATRPT_REND_NONE);
 }
 
 bool AttBeamrend::HasSlope( )
@@ -413,13 +413,13 @@ AttBeatRptVis::~AttBeatRptVis() {
 }
 
 void AttBeatRptVis::ResetBeatRptVis() {
-    m_rend = "";
+    m_rend = BEATRPT_REND_NONE;
 }
 
 bool AttBeatRptVis::ReadBeatRptVis(  pugi::xml_node element ) {
     bool hasAttribute = false;
     if (element.attribute("rend")) {
-        this->SetRend(StrToStr(element.attribute("rend").value()));
+        this->SetRend(StrToBeatrptRend(element.attribute("rend").value()));
         element.remove_attribute("rend");
         hasAttribute = true;
     }
@@ -429,7 +429,7 @@ bool AttBeatRptVis::ReadBeatRptVis(  pugi::xml_node element ) {
 bool AttBeatRptVis::WriteBeatRptVis(  pugi::xml_node element ) {
     bool wroteAttribute = false;
     if (this->HasRend()) {
-        element.append_attribute("rend") = StrToStr(this->GetRend()).c_str();
+        element.append_attribute("rend") = BeatrptRendToStr(this->GetRend()).c_str();
         wroteAttribute = true;
     }
     return wroteAttribute;
@@ -437,7 +437,7 @@ bool AttBeatRptVis::WriteBeatRptVis(  pugi::xml_node element ) {
 
 bool AttBeatRptVis::HasRend( )
 {
-    return (m_rend != "");
+    return (m_rend != BEATRPT_REND_NONE);
 }
 
 
@@ -1178,19 +1178,19 @@ AttNumberplacement::~AttNumberplacement() {
 }
 
 void AttNumberplacement::ResetNumberplacement() {
-    m_numPlace = "";
-    m_numVisible = "";
+    m_numPlace = PLACE_NONE;
+    m_numVisible = BOOLEAN_NONE;
 }
 
 bool AttNumberplacement::ReadNumberplacement(  pugi::xml_node element ) {
     bool hasAttribute = false;
     if (element.attribute("num.place")) {
-        this->SetNumPlace(StrToStr(element.attribute("num.place").value()));
+        this->SetNumPlace(StrToPlace(element.attribute("num.place").value()));
         element.remove_attribute("num.place");
         hasAttribute = true;
     }
     if (element.attribute("num.visible")) {
-        this->SetNumVisible(StrToStr(element.attribute("num.visible").value()));
+        this->SetNumVisible(StrToBool(element.attribute("num.visible").value()));
         element.remove_attribute("num.visible");
         hasAttribute = true;
     }
@@ -1200,11 +1200,11 @@ bool AttNumberplacement::ReadNumberplacement(  pugi::xml_node element ) {
 bool AttNumberplacement::WriteNumberplacement(  pugi::xml_node element ) {
     bool wroteAttribute = false;
     if (this->HasNumPlace()) {
-        element.append_attribute("num.place") = StrToStr(this->GetNumPlace()).c_str();
+        element.append_attribute("num.place") = PlaceToStr(this->GetNumPlace()).c_str();
         wroteAttribute = true;
     }
     if (this->HasNumVisible()) {
-        element.append_attribute("num.visible") = StrToStr(this->GetNumVisible()).c_str();
+        element.append_attribute("num.visible") = BoolToStr(this->GetNumVisible()).c_str();
         wroteAttribute = true;
     }
     return wroteAttribute;
@@ -1212,12 +1212,12 @@ bool AttNumberplacement::WriteNumberplacement(  pugi::xml_node element ) {
 
 bool AttNumberplacement::HasNumPlace( )
 {
-    return (m_numPlace != "");
+    return (m_numPlace != PLACE_NONE);
 }
 
 bool AttNumberplacement::HasNumVisible( )
 {
-    return (m_numVisible != "");
+    return (m_numVisible != BOOLEAN_NONE);
 }
 
 
@@ -1813,7 +1813,7 @@ bool Att::SetCmn( Object *element, std::string attrType, std::string attrValue )
         AttBeamrend *att = dynamic_cast<AttBeamrend*>(element);
         assert( att );
         if (attrType == "rend") {
-            att->SetRend(att->StrToStr(attrValue));
+            att->SetRend(att->StrToBeatrptRend(attrValue));
             return true;
         }
         if (attrType == "slopeDbl") {
@@ -1833,7 +1833,7 @@ bool Att::SetCmn( Object *element, std::string attrType, std::string attrValue )
         AttBeatRptVis *att = dynamic_cast<AttBeatRptVis*>(element);
         assert( att );
         if (attrType == "rend") {
-            att->SetRend(att->StrToStr(attrValue));
+            att->SetRend(att->StrToBeatrptRend(attrValue));
             return true;
         }
     }
@@ -1985,11 +1985,11 @@ bool Att::SetCmn( Object *element, std::string attrType, std::string attrValue )
         AttNumberplacement *att = dynamic_cast<AttNumberplacement*>(element);
         assert( att );
         if (attrType == "numPlace") {
-            att->SetNumPlace(att->StrToStr(attrValue));
+            att->SetNumPlace(att->StrToPlace(attrValue));
             return true;
         }
         if (attrType == "numVisible") {
-            att->SetNumVisible(att->StrToStr(attrValue));
+            att->SetNumVisible(att->StrToBool(attrValue));
             return true;
         }
     }
@@ -2151,7 +2151,7 @@ void Att::GetCmn( Object *element, ArrayOfStrAttr *attributes ) {
         AttBeamrend *att = dynamic_cast<AttBeamrend*>(element);
         assert( att );
         if (att->HasRend()) {
-            attributes->push_back(std::make_pair("rend", att->StrToStr(att->GetRend())));
+            attributes->push_back(std::make_pair("rend", att->BeatrptRendToStr(att->GetRend())));
         }
         if (att->HasSlope()) {
             attributes->push_back(std::make_pair("slopeDbl", att->DblToStr(att->GetSlope())));
@@ -2168,7 +2168,7 @@ void Att::GetCmn( Object *element, ArrayOfStrAttr *attributes ) {
         AttBeatRptVis *att = dynamic_cast<AttBeatRptVis*>(element);
         assert( att );
         if (att->HasRend()) {
-            attributes->push_back(std::make_pair("rend", att->StrToStr(att->GetRend())));
+            attributes->push_back(std::make_pair("rend", att->BeatrptRendToStr(att->GetRend())));
         }
     }
     if (element->HasAttClass( ATT_BENDGES ) ) {
@@ -2297,10 +2297,10 @@ void Att::GetCmn( Object *element, ArrayOfStrAttr *attributes ) {
         AttNumberplacement *att = dynamic_cast<AttNumberplacement*>(element);
         assert( att );
         if (att->HasNumPlace()) {
-            attributes->push_back(std::make_pair("numPlace", att->StrToStr(att->GetNumPlace())));
+            attributes->push_back(std::make_pair("numPlace", att->PlaceToStr(att->GetNumPlace())));
         }
         if (att->HasNumVisible()) {
-            attributes->push_back(std::make_pair("numVisible", att->StrToStr(att->GetNumVisible())));
+            attributes->push_back(std::make_pair("numVisible", att->BoolToStr(att->GetNumVisible())));
         }
     }
     if (element->HasAttClass( ATT_OCTAVELOG ) ) {

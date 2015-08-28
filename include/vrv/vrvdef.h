@@ -45,8 +45,16 @@ typedef std::map<Staff*, std::vector<char> > MapOfLedgerLineFlags;
 // Object defines
 //----------------------------------------------------------------------------
 
+/**
+ * The ClassIds are used to identify Object child classes through the Object::Is virtual method.
+ * Each Object child class has to have its own id and has to overwrite the Is() method.
+ * Base classes (e.g., LayerElement) that are never instanciated have boundary ids
+ * used for checking if an Object is child of a base class. See for example
+ * Object::IsLayerElement.
+ */
 enum ClassId {
     OBJECT = 0,
+    //
     ALIGNMENT,
     CLEF_ATTR,
     DOC,
@@ -59,15 +67,13 @@ enum ClassId {
     MENSUR_ATTR,
     METER_SIG_ATTR,
     PAGE,
-    SCORE_DEF,
     STAFF,
     STAFF_ALIGNMENT,
-    STAFF_DEF,
     STAFF_GRP,
     SYSTEM,
     SYSTEM_ALIGNER,
     SYSTEM_ALIGNMENT,
-    //
+    // Ids for EditorialElement child classes
     EDITORIAL_ELEMENT,
     ANNOT,
     APP,
@@ -75,12 +81,13 @@ enum ClassId {
     RDG,
     SUPPLIED,
     EDITORIAL_ELEMENT_max,
-    //
+    // Ids for LayerElement child classes
     LAYER_ELEMENT,
     ACCID,
     BAR_LINE,
     BAR_LINE_ATTR,
     BEAM,
+    BEAT_RPT,
     CHORD,
     CLEF,
     CUSTOS,
@@ -89,29 +96,43 @@ enum ClassId {
     MENSUR,
     METER_SIG,
     MREST,
+    MRPT,
+    MRPT2,
     MULTI_REST,
+    MULTI_RPT,
     NOTE,
+    PROPORT,
     REST,
     SPACE,
     SYL,
     TUPLET,
     VERSE,
     LAYER_ELEMENT_max,
-    //
+    // Ids for FloatingElement child classes
     FLOATING_ELEMENT,
     SLUR,
     TEMPO,
     TIE,
     FLOATING_ELEMENT_max,
+    // Ids for ScoreDefElement child classes
+    SCORE_DEF_ELEMENT,
+    SCORE_DEF,
+    STAFF_DEF,
+    SCORE_DEF_ELEMENT_max,
     //
     UNSPECIFIED
 };
 
+/**
+ * The InterfaceIds are used to identify Interface child classes through the Interface::IsInterface virtual method.
+ * Each Interface child class has to have its own id and has to overwrite the IsInterface() method.
+ */
 enum InterfaceId {
     INTERFACE,
     INTERFACE_DURATION,
     INTERFACE_PITCH,
     INTERFACE_POSITION,
+    INTERFACE_SCOREDEF,
     INTERFACE_TEXT_DIR,
     INTERFACE_TIME_SPANNING
 };
@@ -205,14 +226,6 @@ enum EditorialLevel {
 
 #define ON 1
 #define OFF 0
-    
-// the maximum is 255 (unsigned char)
-enum StaffGrpSymbol {
-    STAFFGRP_NONE = 0,
-    STAFFGRP_LINE,
-    STAFFGRP_BRACE,
-    STAFFGRP_BRACKET
-};
     
 /* This is used for fast clef offset calculation.
  * It uses 4 bytes with, from right to left

@@ -295,8 +295,8 @@ public:
      * to the default value)
      **/
     ///@{
-    void SetRend(std::string rend_) { m_rend = rend_; };
-    std::string GetRend() const { return m_rend; };    
+    void SetRend(data_BEATRPT_REND rend_) { m_rend = rend_; };
+    data_BEATRPT_REND GetRend() const { return m_rend; };    
     bool HasRend( );
     
     //
@@ -308,7 +308,7 @@ public:
 
 private:
     /** Records the appearance and usually the function of the bar line. **/
-    std::string m_rend;
+    data_BEATRPT_REND m_rend;
     /** Records the slope of the beam. **/
     double m_slopeDbl;
 
@@ -383,15 +383,15 @@ public:
      * to the default value)
      **/
     ///@{
-    void SetRend(std::string rend_) { m_rend = rend_; };
-    std::string GetRend() const { return m_rend; };    
+    void SetRend(data_BEATRPT_REND rend_) { m_rend = rend_; };
+    data_BEATRPT_REND GetRend() const { return m_rend; };    
     bool HasRend( );
     
     ///@}
 
 private:
     /** Records the appearance and usually the function of the bar line. **/
-    std::string m_rend;
+    data_BEATRPT_REND m_rend;
 
 /* include <attrend> */
 };
@@ -1034,22 +1034,22 @@ public:
      * to the default value)
      **/
     ///@{
-    void SetNumPlace(std::string numPlace_) { m_numPlace = numPlace_; };
-    std::string GetNumPlace() const { return m_numPlace; };    
+    void SetNumPlace(data_PLACE numPlace_) { m_numPlace = numPlace_; };
+    data_PLACE GetNumPlace() const { return m_numPlace; };    
     bool HasNumPlace( );
     
     //
-    void SetNumVisible(std::string numVisible_) { m_numVisible = numVisible_; };
-    std::string GetNumVisible() const { return m_numVisible; };    
+    void SetNumVisible(data_BOOLEAN numVisible_) { m_numVisible = numVisible_; };
+    data_BOOLEAN GetNumVisible() const { return m_numVisible; };    
     bool HasNumVisible( );
     
     ///@}
 
 private:
     /** States where the tuplet number will be placed in relation to the note heads. **/
-    std::string m_numPlace;
+    data_PLACE m_numPlace;
     /** Determines if the tuplet number is visible. **/
-    std::string m_numVisible;
+    data_BOOLEAN m_numVisible;
 
 /* include <attnum.visible> */
 };

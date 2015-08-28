@@ -44,7 +44,10 @@ public:
     virtual ClassId Is() { return LAYER_ELEMENT; };
     ///@}
     
-    LayerElement& operator=( const LayerElement& element ); // copy assignement - this need to be changed to the Object::Clone way;
+    /**
+     * Copy assignment for resetting pointers
+     */
+    LayerElement& operator=( const LayerElement& element );
     
     /**
      * Reset the alignment values (m_drawingX, m_drawingXRel, etc.)
@@ -60,7 +63,8 @@ public:
     /**
      * @name Set and get the flag for indication whether it is a ScoreDef or StaffDef attribute.
      * The value is false by default. Is it set to true of ScoreDef and StaffDef and used when
-     * drawing the element
+     * drawing the element.
+     * NB In the scoreDef or staffDef itself, it can be attributes or an element.
      */
     ///@{
     bool GetScoreOrStaffDefAttr() const { return m_isScoreOrStaffDefAttr; };
@@ -71,13 +75,17 @@ public:
      * @name Child type checkers.
      */
     ///@{
+    /** Returns true if the element is a grace note */
     bool IsGraceNote();
+    /** Returns true if the element is a note or a note child and the note has a @grace */
+    bool IsCueSize();
     ///@}
     
     /**
-     * Returns true if the element is a note or a note child and the note has a @grace
+     * Returns the drawing stem direction if the element is a note or a chord.
+     * (Could one day go in a drawing stem interface)
      */
-    bool IsCueSize();
+    data_STEMDIRECTION GetDrawingStemDir();
 
     Alignment *GetAlignment() { return m_alignment; };
     

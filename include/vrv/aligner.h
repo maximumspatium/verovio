@@ -19,8 +19,6 @@ class Note;
 class StaffAlignment;
 class SystemAligner;
 
-
-
 /**
  * Alignment types for aligning types together.
  * For example, we align notes and rests (default) together, clef separately, etc.
@@ -226,6 +224,9 @@ public:
      */
     virtual int IntegrateBoundingBoxXShift( ArrayPtrVoid *params );
     
+
+    virtual int HorizontalSpaceForDuration(double intervalTime, bool isMensural);
+
     /**
      * Set the position of the Alignment.
      * Looks at the time different with the previous Alignment.

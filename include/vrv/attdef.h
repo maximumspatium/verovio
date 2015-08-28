@@ -94,7 +94,7 @@ enum data_ACCIDENTAL_IMPLICIT  {
 };
 
 /**
- * MEI data_BARRENDITION
+ * MEI data.BARRENDITION
  */
 enum data_BARRENDITION {
     BARRENDITION_NONE = 0,
@@ -109,6 +109,19 @@ enum data_BARRENDITION {
     BARRENDITION_rptboth,
     BARRENDITION_rptend,
     BARRENDITION_single
+};
+    
+/**
+ * MEI data.BEATRPT_REND
+ */
+enum data_BEATRPT_REND {
+    BEATRPT_REND_NONE = 0,
+    BEATRPT_REND_4,
+    BEATRPT_REND_16,
+    BEATRPT_REND_32,
+    BEATRPT_REND_64,
+    BEATRPT_REND_128,
+    BEATRPT_REND_mixed
 };
     
 /**
@@ -146,6 +159,15 @@ enum data_CON {
     CON_v,
     CON_i,
     CON_b
+};
+    
+/**
+ * MEI values for @curvedir (no datatype in MEI)
+ */
+enum data_CURVEDIR {
+    CURVEDIR_NONE = 0,
+    CURVEDIR_above,
+    CURVEDIR_below
 };
 
 /**
@@ -336,6 +358,11 @@ enum data_OCTAVE_DIS {
 };
     
 /**
+ * MEI value for @scale (no datatype in MEI)
+ */
+typedef int data_PERCENT;
+    
+/**
  * MEI data.PITCHNAME
  */
 enum data_PITCHNAME {
@@ -376,6 +403,16 @@ enum data_PLACE {
     PLACE_NONE = 0,
     PLACE_above,
     PLACE_below
+};
+
+/**
+ * MEI values for @symbol (no datatype in MEI)
+ */
+enum data_SYMBOL {
+    SYMBOL_NONE = 0,
+    SYMBOL_brace,
+    SYMBOL_bracket,
+    SYMBOL_line
 };
     
 /**

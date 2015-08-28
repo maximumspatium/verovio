@@ -21,6 +21,7 @@
 #include "mensur.h"
 #include "metersig.h"
 #include "note.h"
+#include "rpt.h"
 #include "staff.h"
 #include "vrv.h"
 
@@ -31,61 +32,25 @@ namespace vrv {
 //----------------------------------------------------------------------------
 
 Layer::Layer( ):
-	DocObject("layer-"), DrawingListInterface(), ObjectListInterface(),
+	DocObject("layer-"), DrawingListInterface(), ObjectListInterface(), StaffDefDrawingInterface(),
     AttCommon()
 {
     RegisterAttClass(ATT_COMMON);
-    // own pointers need to be initialized before Reset()
-    m_currentClef = NULL;
-    m_currentKeySig = NULL;
-    m_currentMensur = NULL;
-    m_currentMeterSig = NULL;
+
     Reset();
 }
 
 Layer::~Layer()
 {
-    if (m_currentClef) {
-        delete m_currentClef;
-    }
-    if (m_currentKeySig) {
-        delete m_currentKeySig;
-    }
-    if (m_currentMensur) {
-        delete m_currentMensur;
-    }
-    if (m_currentMeterSig) {
-        delete m_currentMeterSig;
-    }    
 }
 
 void Layer::Reset()
 {
     DocObject::Reset();
     DrawingListInterface::Reset();
+    StaffDefDrawingInterface::Reset();
     ResetCommon();
-    
-    if (m_currentClef) {
-        delete m_currentClef;
-    }
-    if (m_currentKeySig) {
-        delete m_currentKeySig;
-    }
-    if (m_currentMensur) {
-        delete m_currentMensur;
-    }
-    if (m_currentMeterSig) {
-        delete m_currentMeterSig;
-    }
-    // Have at least a clef by default
-    m_currentClef = new Clef();
-    m_currentKeySig = NULL;
-    m_currentMensur = NULL;
-    m_currentMeterSig = NULL;
-    m_drawClef = false;
-    m_drawKeySig = false;
-    m_drawMensur = false;
-    m_drawMeterSig = false;
+
     m_drawingStemDir = STEMDIRECTION_NONE;
 }
     
@@ -122,48 +87,28 @@ LayerElement *Layer::GetAtPos( int x )
 	}
 	return element;
 }
-    
-void Layer::SetCurrentClef( Clef *clef )
-{
-    if (clef) {
-        if (m_currentClef) delete m_currentClef;
-        m_currentClef = clef;
-    }
-}
 
-void Layer::SetCurrentKeySig( KeySig *keySig )
+void Layer::SetDrawingAndCurrentValues(  StaffDef *currentStaffDef )
 {
-    if (keySig) {
-        if (m_currentKeySig) delete m_currentKeySig;
-        m_currentKeySig = keySig;
-    }
-}
-
-void Layer::SetCurrentMensur( Mensur *mensur )
-{
-    if (mensur) {
-        if (m_currentMensur) delete m_currentMensur;
-        m_currentMensur = mensur;
-    }
-}
-
-void Layer::SetCurrentMeterSig( MeterSig *meterSig )
-{
-    if (meterSig) {
-        if (m_currentMeterSig) delete m_currentMeterSig;
-        m_currentMeterSig = meterSig;
-    }
-}
-
-void Layer::SetDrawingAndCurrentValues( ScoreDef *currentScoreDef, StaffDef *currentStaffDef )
-{
-    if (!currentStaffDef || !currentScoreDef) {
-        LogDebug("scoreDef and/or staffDef not found");
+    if (!currentStaffDef) {
+        LogDebug("staffDef not found");
         return;
     }
     
+    // Remove any previous value in the Layer
+    this->StaffDefDrawingInterface::Reset();
+    
+    // Special case with C-major / A-minor key signature (0) : if key cancellation is false, we are at the beginning
+    // of a new system, and hence we should not draw it. Maybe this can be improved?
+    bool drawKeySig = currentStaffDef->DrawKeySig();
+    if (currentStaffDef->GetCurrentKeySig() && (currentStaffDef->GetCurrentKeySig()->GetAlterationNumber() == 0)) {
+        if (currentStaffDef->DrawKeySigCancellation() == false) {
+            drawKeySig = false;
+        }
+    }
+    
     this->SetDrawClef( currentStaffDef->DrawClef() );
-    this->SetDrawKeySig( currentStaffDef->DrawKeySig() );
+    this->SetDrawKeySig( drawKeySig ); // see above
     this->SetDrawMensur( currentStaffDef->DrawMensur() );
     this->SetDrawMeterSig( currentStaffDef->DrawMeterSig() );
     this->SetDrawKeySigCancellation( currentStaffDef->DrawKeySigCancellation() );
@@ -174,32 +119,17 @@ void Layer::SetDrawingAndCurrentValues( ScoreDef *currentScoreDef, StaffDef *cur
     currentStaffDef->SetDrawMeterSig( false );
     currentStaffDef->SetDrawKeySigCancellation( false );
 
-    if ( currentStaffDef->GetClef() ) {
-        this->SetCurrentClef( currentStaffDef->GetClefCopy() );
+    if ( currentStaffDef->GetCurrentClef() ) {
+        this->SetCurrentClef(new Clef(*currentStaffDef->GetCurrentClef()));
     }
-    else {
-        this->SetCurrentClef( currentScoreDef->GetClefCopy() );
+    if ( currentStaffDef->GetCurrentKeySig() ) {
+        this->SetCurrentKeySig(new KeySig(*currentStaffDef->GetCurrentKeySig()));
     }
-
-    if ( currentStaffDef->GetKeySig() ) {
-        this->SetCurrentKeySig( currentStaffDef->GetKeySigCopy() );
+    if ( currentStaffDef->GetCurrentMensur() ) {
+        this->SetCurrentMensur(new Mensur(*currentStaffDef->GetCurrentMensur()));
     }
-    else {
-        this->SetCurrentKeySig( currentScoreDef->GetKeySigCopy() );
-    }
-
-    if ( currentStaffDef->GetMensur() ) {
-        this->SetCurrentMensur( currentStaffDef->GetMensurCopy() );
-    }
-    else {
-        this->SetCurrentMensur( currentScoreDef->GetMensurCopy() );
-    }
-
-    if ( currentStaffDef->GetMeterSig() ) {
-        this->SetCurrentMeterSig( currentStaffDef->GetMeterSigCopy() );
-    }
-    else {
-        this->SetCurrentMeterSig( currentScoreDef->GetMeterSigCopy() );
+    if ( currentStaffDef->GetCurrentMeterSig() ) {
+        this->SetCurrentMeterSig(new MeterSig(*currentStaffDef->GetCurrentMeterSig()));
     }
 }
 
@@ -208,7 +138,7 @@ Clef* Layer::GetClef( LayerElement *test )
     Object *testObject = test;
     
     if (!test) {
-        return m_currentClef;
+        return GetCurrentClef();
     }
 	
     //make sure list is set
@@ -224,7 +154,7 @@ Clef* Layer::GetClef( LayerElement *test )
         return clef;
     }
 
-    return m_currentClef;
+    return GetCurrentClef();
 }
  
 int Layer::GetClefOffset( LayerElement *test )
@@ -255,20 +185,20 @@ int Layer::AlignHorizontally( ArrayPtrVoid *params )
     // we are starting a new layer, reset the time;
     (*time) = 0.0;
     
-    (*currentMensur) = m_currentMensur;
-    (*currentMeterSig) = m_currentMeterSig;
+    (*currentMensur) = GetCurrentMensur();
+    (*currentMeterSig) = GetCurrentMeterSig();
     
-    if ( m_drawClef && m_currentClef ) {
-        m_currentClef->AlignHorizontally( params );
+    if ( DrawClef() && GetCurrentClef() ) {
+        GetCurrentClef()->AlignHorizontally( params );
     }
-    if ( m_drawKeySig && m_currentKeySig ) {
-        m_currentKeySig->AlignHorizontally( params );
+    if ( DrawKeySig() && GetCurrentKeySig() ) {
+        GetCurrentKeySig()->AlignHorizontally( params );
     }
-    if ( m_drawMensur && m_currentMensur) {
-        m_currentMensur->AlignHorizontally( params );
+    if ( DrawMensur() && GetCurrentMensur() ) {
+        GetCurrentMensur()->AlignHorizontally( params );
     }
-    if ( m_drawMeterSig && m_currentMeterSig ) {
-        m_currentMeterSig->AlignHorizontally( params );
+    if ( DrawMeterSig() && GetCurrentMeterSig() ) {
+        GetCurrentMeterSig()->AlignHorizontally( params );
     }
 
     return FUNCTOR_CONTINUE;
@@ -342,6 +272,20 @@ int Layer::SetDrawingXY( ArrayPtrVoid *params )
         this->GetDrawingMeterSig()->SetDrawingX( this->GetDrawingMeterSig()->GetXRel() + (*currentMeasure)->GetDrawingX() );
     }
     
+    return FUNCTOR_CONTINUE;
+}
+    
+int Layer::PrepareRpt( ArrayPtrVoid *params )
+{
+    // param 0: a pointer to the current MRpt pointer
+    // param 1: a pointer to the data_BOOLEAN indicating if multiNumber (unused)
+    // param 2: a pointer to the doc scoreDef (unused)
+    MRpt **currentMRpt =  static_cast<MRpt**>((*params)[0]);
+
+    // If we have encountered a mRpt before and there is none is this layer, reset it to NULL
+    if ((*currentMRpt) && !this->FindChildByType(MRPT)) {
+        (*currentMRpt) = NULL;
+    }
     return FUNCTOR_CONTINUE;
 }
 

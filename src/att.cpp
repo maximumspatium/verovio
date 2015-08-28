@@ -197,6 +197,39 @@ data_BARRENDITION Att::StrToBarRendition(std::string value)
 	}
 	return BARRENDITION_NONE;
 }
+    
+std::string Att::BeatrptRendToStr(data_BEATRPT_REND data)
+{
+    std::string value;
+    switch(data)
+    {
+        case BEATRPT_REND_4 : value = "4"; break;
+        case BEATRPT_REND_16 : value = "16"; break;
+        case BEATRPT_REND_32 : value = "32"; break;
+        case BEATRPT_REND_64 : value = "64"; break;
+        case BEATRPT_REND_128 : value = "128"; break;
+        case BEATRPT_REND_mixed : value = "mixed"; break;
+        default:
+            LogWarning("Unknown mode '%d'", data);
+            value = "";
+            break;
+    }
+    return value;
+}
+
+data_BEATRPT_REND Att::StrToBeatrptRend(std::string value)
+{
+    if (value == "4") return BEATRPT_REND_4;
+    else if (value == "16") return BEATRPT_REND_16;
+    else if (value == "32") return BEATRPT_REND_32;
+    else if (value == "64") return BEATRPT_REND_64;
+    else if (value == "128") return BEATRPT_REND_128;
+    else if (value == "mixed") return BEATRPT_REND_mixed;
+    else {
+        LogWarning("Unsupported beatrpt rend '%s'", value.c_str() );
+    }
+    return BEATRPT_REND_NONE;
+}
 
 std::string Att::BoolToStr(data_BOOLEAN data)
 {
@@ -211,7 +244,6 @@ std::string Att::BoolToStr(data_BOOLEAN data)
             break;
     }
     return value;
-    
 }
     
 data_BOOLEAN Att::StrToBool(std::string value)
@@ -292,6 +324,31 @@ data_CON Att::StrToCon(std::string value)
         LogWarning("Unsupported pitch name '%s'", value.c_str() );
     }
     return CON_NONE;
+}
+    
+std::string Att::CurvedirToStr(data_CURVEDIR data)
+{
+    std::string value;
+    switch(data)
+    {
+        case CURVEDIR_above : value = "above"; break;
+        case CURVEDIR_below: value = "below"; break;
+        default:
+            LogWarning("Unknown curvedir '%d'", data);
+            value = "";
+            break;
+    }
+    return value;
+}
+    
+data_CURVEDIR Att::StrToCurvedir(std::string value)
+{
+    if (value == "above") return CURVEDIR_above;
+    else if (value == "below") return CURVEDIR_below;
+    else {
+        LogWarning("Unsupported curvedir '%s'", value.c_str() );
+    }
+    return CURVEDIR_NONE;
 }
     
 std::string Att::DurToStr(data_DURATION data)
@@ -738,6 +795,25 @@ data_NUMFORMAT Att::StrToNumformat(std::string value)
     return NUMFORMAT_NONE;
 }
     
+std::string Att::PercentToStr( data_PERCENT data)
+{
+    return StringFormat("%d%%", data);
+}
+
+data_PERCENT Att::StrToPercent(std::string value)
+{
+    int percent = atoi( std::string( value.begin(), value.end() - 1 ).c_str() );
+    if (percent > 1000) {
+        LogWarning("Percent cannot be greater than 1000%");
+        return 100;
+    }
+    else if (percent < 1) {
+        LogWarning("Percent has to be greater than 0%");
+        return 100;
+    }
+    return percent;
+}
+    
 std::string Att::OctaveDisToStr( data_OCTAVE_DIS data )
 {
     std::string value;
@@ -961,6 +1037,33 @@ data_STEMPOSITION Att::StrToStemPosition(std::string value)
     }
     return STEMPOSITION_NONE;
 }    
+
+std::string Att::SymbolToStr(data_SYMBOL data)
+{
+    std::string value;
+    switch(data)
+    {
+        case SYMBOL_brace : value = "brace"; break;
+        case SYMBOL_bracket: value = "bracket"; break;
+        case SYMBOL_line: value = "line"; break;
+        default:
+            LogWarning("Unknown symbol '%d'", data);
+            value = "";
+            break;
+    }
+    return value;
+}
+
+data_SYMBOL Att::StrToSymbol(std::string value)
+{
+    if (value == "brace") return SYMBOL_brace;
+    else if (value == "bracket") return SYMBOL_bracket;
+    else if (value == "line") return SYMBOL_line;
+    else {
+        LogWarning("Unsupported symbol '%s'", value.c_str() );
+    }
+    return SYMBOL_NONE;
+}
 
 std::string Att::TieToStr(data_TIE data)
 {

@@ -269,7 +269,7 @@
         <slashNoteheads>
             <description>Slash noteheads</description>
             <!--<glyph glyph-code="E100" smufl-name="noteheadSlashVerticalEnds"/>-->
-            <!--<glyph glyph-code="E101" smufl-name="noteheadSlashHorizontalEnds"/>-->
+            <glyph glyph-code="E101" smufl-name="noteheadSlashHorizontalEnds"/>
             <!--<glyph glyph-code="E102" smufl-name="noteheadSlashWhiteWhole"/>-->
             <!--<glyph glyph-code="E103" smufl-name="noteheadSlashWhiteHalf"/>-->
             <!--<glyph glyph-code="E104" smufl-name="noteheadSlashDiamondWhite"/>-->
@@ -1197,8 +1197,8 @@
         <barRepeats>
             <description>Bar repeats</description>
             <glyph glyph-code="E500" smufl-name="repeat1Bar"/>
-            <!--<glyph glyph-code="E501" smufl-name="repeat2Bars"/>-->
-            <!--<glyph glyph-code="E502" smufl-name="repeat4Bars"/>-->
+            <glyph glyph-code="E501" smufl-name="repeat2Bars"/>
+            <glyph glyph-code="E502" smufl-name="repeat4Bars"/>
             <range_end>U+E50F</range_end>
             <range_start>U+E500</range_start>
         </barRepeats>
@@ -2185,13 +2185,13 @@
             <!--<glyph glyph-code="E935" smufl-name="mensuralNoteheadLongaVoid"/>-->
             <!--<glyph glyph-code="E936" smufl-name="mensuralNoteheadLongaBlackVoid"/>-->
             <!--<glyph glyph-code="E937" smufl-name="mensuralNoteheadLongaWhite"/>-->
-            <!--<glyph glyph-code="E938" smufl-name="mensuralNoteheadSemibrevisBlack"/>-->
-            <!--<glyph glyph-code="E939" smufl-name="mensuralNoteheadSemibrevisVoid"/>-->
+            <glyph glyph-code="E938" smufl-name="mensuralNoteheadSemibrevisBlack"/>
+            <glyph glyph-code="E939" smufl-name="mensuralNoteheadSemibrevisVoid"/>
             <!--<glyph glyph-code="E93A" smufl-name="mensuralNoteheadSemibrevisBlackVoid"/>-->
             <!--<glyph glyph-code="E93B"
                 smufl-name="mensuralNoteheadSemibrevisBlackVoidTurned"/>-->
-            <!--<glyph glyph-code="E93C" smufl-name="mensuralNoteheadMinimaWhite"/>-->
-            <!--<glyph glyph-code="E93D" smufl-name="mensuralNoteheadSemiminimaWhite"/>-->
+            <glyph glyph-code="E93C" smufl-name="mensuralNoteheadMinimaWhite"/>
+            <glyph glyph-code="E93D" smufl-name="mensuralNoteheadSemiminimaWhite"/>
             <!--<glyph glyph-code="E93E" smufl-name="mensuralCombStemUp"/>-->
             <!--<glyph glyph-code="E93F" smufl-name="mensuralCombStemDown"/>-->
             <!--<glyph glyph-code="E940" smufl-name="mensuralCombStemDiagonal"/>-->
